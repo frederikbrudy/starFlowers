@@ -24,5 +24,23 @@ namespace StarFlowers
         {
             InitializeComponent();
         }
+
+        private void WindowLoaded(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+
+        }
+
+        private void KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key.Equals(System.Windows.Input.Key.Escape))
+            {
+                System.Windows.Application.Current.Shutdown();
+            }
+        }
     }
 }
