@@ -570,7 +570,7 @@ namespace StarFlowers
                     dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, 640.0, 480.0));
 
               
-                    //dc.DrawEllipse(centerPointColor, null, playerCenterPoint, 10, 10);
+                    dc.DrawEllipse(centerPointColor, null, playerCenterPoint, 10, 10);
 
                     //if (handCenterPoint.X > 0.0)
                     //{
@@ -615,7 +615,8 @@ namespace StarFlowers
 
             if (playerCenterPoint != null)
             {
-                this.setSpawnPoint(this.stretchDepthPointToScreen(playerCenterPoint));
+                //this.setSpawnPoint(this.stretchDepthPointToScreen(playerCenterPoint));
+                this.setSpawnPoint(this.stretchDepthPointToScreen(handCenterPoint));
             }
         }
 
