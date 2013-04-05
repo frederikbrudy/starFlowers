@@ -1,8 +1,38 @@
 ﻿<Window x:Class="StarFlowers.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525" Loaded="WindowLoaded" Closing="WindowClosing" KeyDown="KeyDown">
+        Title="MainWindow" Height="768" Width="1366" 
+        Background="Black" WindowState="Normal" WindowStyle="None"
+        Loaded="WindowLoaded" Closing="WindowClosing" KeyDown="key_down"
+        SizeChanged="WindowSizeChanged" MouseMove="mouse_move"
+        Cursor="None">
     <Grid>
-        
+        <Viewport3D Name="World" Width="1366" Height="768">
+            <Viewport3D.Camera>
+                <OrthographicCamera Position="0,0,1" LookDirection="0,0,-1" UpDirection="0,1,0" Width="1366" />
+            </Viewport3D.Camera>
+
+            <Viewport3D.Children>
+                <ModelVisual3D>
+                    <ModelVisual3D.Content>
+                        <Model3DGroup x:Name="WorldModels">
+                            <AmbientLight Color="#FFFFFF"/>
+                        </Model3DGroup>
+                    </ModelVisual3D.Content>
+                </ModelVisual3D>
+            </Viewport3D.Children>
+        </Viewport3D>
+        <!--<ModelVisual3D>
+            <ModelVisual3D.Content>
+                <PointLight Position="0,-1,1" Color="White" />
+            </ModelVisual3D.Content>
+        </ModelVisual3D>-->
+        <DockPanel Background="#01000000">
+            <Label Visibility="Visible" Name="FrameRateLabel" DockPanel.Dock="Top" Foreground="Yellow" Content="FPS: 0"/>
+        </DockPanel>
+        <Image Name="MouseImage"></Image>
+        <Image x:Name="MyImage" Source="Images\lmu_muenchen_logo.png" Opacity="0.5" Width="400" Margin="948,278,10,-278" >
+        </Image>
+        <Canvas x:Name="ParticleHost" />
     </Grid>
 </Window>
