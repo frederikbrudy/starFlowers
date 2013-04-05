@@ -8,6 +8,8 @@
         SizeChanged="WindowSizeChanged" MouseMove="mouse_move"
         Cursor="None">
     <Grid>
+        <Image x:Name="MyImage" />
+        <Image x:Name="OverlayImage" Opacity="0.5" />
         <Viewport3D Name="World" Width="1366" Height="768">
             <Viewport3D.Camera>
                 <OrthographicCamera Position="0,0,1" LookDirection="0,0,-1" UpDirection="0,1,0" Width="1366" />
@@ -32,10 +34,9 @@
             <Label Visibility="Visible" Name="FrameRateLabel" DockPanel.Dock="Top" Foreground="Yellow" Content="FPS: 0"/>
         </DockPanel>
         <Image Name="MouseImage"></Image>
-        <Image x:Name="LogoImage" Source="Images\lmu_muenchen_logo.png" Opacity="0.5" Width="400" Margin="948,278,10,-278" >
-        </Image>
+        <!--<Image x:Name="LogoImage" Source="Images\lmu_muenchen_logo.png" Opacity="0.5" Width="400" Margin="948,278,10,-278" ></Image>-->
+        
         <Canvas x:Name="ParticleHost" />
-        <Image x:Name="MyImage" />
-        <Image x:Name="OverlayImage" Opacity="0.5" />
+        
     </Grid>
 </Window>

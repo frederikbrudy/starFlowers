@@ -101,9 +101,11 @@ namespace StarFlowers
         /// <summary>
         /// Drawing group for mouse position output
         /// </summary>
-        private DrawingGroup drawingGroup2;
+        private DrawingGroup drawingGroupMouse;
 
-        private DrawingImage imageSource2;
+        private DrawingImage imageSourceMouse;
+
+        private const int maxParticleCountPerSystem = 500;
 
         public MainWindow()
         {
@@ -215,17 +217,21 @@ namespace StarFlowers
         private void mouse_move(object sender, MouseEventArgs e)
         {
             this.mousePosition = Mouse.GetPosition(this);
-
-            this.spawnPoint = new Point3D(mousePosition.X-(this.Width/2), (this.Height/2)-mousePosition.Y, 0.0);
+            this.setSpawnPoint(this.mousePosition);
+            
         }
 
+        private void setSpawnPoint(Point newPoint2D)
+        {
+            this.spawnPoint = new Point3D(newPoint2D.X - (this.Width / 2), (this.Height / 2) - newPoint2D.Y, 0.0);
+        }
 
         private void initParticleSystem()
         {
             frameTimer = new System.Windows.Threading.DispatcherTimer();
             frameTimer.Tick += OnFrame;
-            frameTimer.Interval = TimeSpan.FromSeconds(1.0 / 100.0);
-            frameTimer.Start();
+            frameTimer.Interval = TimeSpan.FromSeconds(1.0 / 60.0);
+            //frameTimer.Start();
 
             this.spawnPoint = new Point3D(0.0, 0.0, 0.0);
             this.lastTick = Environment.TickCount;
@@ -233,11 +239,11 @@ namespace StarFlowers
             pm = new ParticleSystemManager();
 
             //this.ParticleHost.Children.Add
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(1000, Colors.Gray));
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(1000, Colors.Red));
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(1000, Colors.Silver));
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(1000, Colors.Orange));
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(1000, Colors.Yellow));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Gray));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Red));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Silver));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Orange));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Yellow));
 
             rand = new Random(this.GetHashCode());
 
@@ -247,13 +253,13 @@ namespace StarFlowers
         private void initDrawingData()
         {
             // Create the drawing group we'll use for drawing
-            this.drawingGroup2 = new DrawingGroup();
+            this.drawingGroupMouse = new DrawingGroup();
 
             // Create an image source that we can use in our image control
-            this.imageSource2 = new DrawingImage(this.drawingGroup2);
+            this.imageSourceMouse = new DrawingImage(this.drawingGroupMouse);
 
             // Display the drawing using our image control
-            MouseImage.Source = this.imageSource2;
+            MouseImage.Source = this.imageSourceMouse;
         }
 
         private void initBrushes(Color color)
@@ -265,6 +271,11 @@ namespace StarFlowers
         }
 
         private void OnFrame(object sender, EventArgs e)
+        {
+            this.doFrameCalculation();
+        }
+
+        private void doFrameCalculation()
         {
             // Calculate frame time;
             this.currentTick = Environment.TickCount;
@@ -285,16 +296,16 @@ namespace StarFlowers
             pm.Update((float)elapsed);
             pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Red, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
             pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Orange, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Gray, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Red, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Orange, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Gray, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Red, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Yellow, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Yellow, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Gray, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Red, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Orange, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Gray, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Red, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Yellow, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Yellow, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
 
             double c = Math.Cos(this.totalElapsed);
             double s = Math.Sin(this.totalElapsed);
@@ -452,6 +463,8 @@ namespace StarFlowers
                         }
                     }
                 }
+
+                this.doFrameCalculation();
 
             }
 
