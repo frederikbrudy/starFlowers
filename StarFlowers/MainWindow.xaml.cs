@@ -107,6 +107,9 @@ namespace StarFlowers
 
         private const int maxParticleCountPerSystem = 500;
 
+        private double currentWidth;
+        private double currentHeight;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -133,6 +136,8 @@ namespace StarFlowers
             drawingGroup = new DrawingGroup();
             imageSource = new DrawingImage(drawingGroup);
             OverlayImage.Source = imageSource;
+
+            this.saveCurrentSize();
 
             // Look through all sensors and start the first connected one.
             foreach (var potentialSensor in KinectSensor.KinectSensors)
@@ -211,7 +216,15 @@ namespace StarFlowers
 
         private void WindowSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            
+            this.saveCurrentSize();
+        }
+
+        private void saveCurrentSize()
+        {
+            this.currentWidth = this.ActualWidth;
+            this.currentHeight = this.ActualHeight;
+            //Console.WriteLine("Width: " + this.Width + ", Height: " + this.Height);
+            //Console.WriteLine("ActualWidth: " + this.ActualWidth + ", ActualHeight: " + this.ActualHeight);
         }
 
         private void mouse_move(object sender, MouseEventArgs e)
@@ -224,6 +237,19 @@ namespace StarFlowers
         private void setSpawnPoint(Point newPoint2D)
         {
             this.spawnPoint = new Point3D(newPoint2D.X - (this.Width / 2), (this.Height / 2) - newPoint2D.Y, 0.0);
+        }
+
+        private Point stretchDepthPointToScreen(Point depthPoint)
+        {
+            Point screenPoint = new Point();
+
+            screenPoint.X = depthPoint.X * this.currentWidth / 640.0;
+            screenPoint.Y = depthPoint.Y * this.currentHeight / 480.0;
+            Console.WriteLine("depthPoint.X: " + depthPoint.X + ", depthPoint.Y: " + depthPoint.Y);
+            Console.WriteLine("screenPoint.X: " + screenPoint.X + ", screenPoint.Y: " + screenPoint.Y);
+            Console.WriteLine("currentWidth: " + currentWidth + ", currentHeight: " + currentHeight);
+
+            return screenPoint;
         }
 
         private void initParticleSystem()
@@ -408,7 +434,7 @@ namespace StarFlowers
                         }
                         else
                         {
-                            somethingToTrackExists = (depthPixel.Depth > 500 && depthPixel.Depth < 2000);
+                            somethingToTrackExists = (depthPixel.Depth > 500 && depthPixel.Depth < 1000);
                             // Pixel ist zwischen 0,8m und 2m entfernt
                         }
 
@@ -490,11 +516,7 @@ namespace StarFlowers
                      
                     dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, 640.0, 480.0));
 
-                    dc.DrawEllipse(centerPointColor,
-                                    null,
-                                    playerCenterPoint,
-                                    10,
-                                    10);                
+                    dc.DrawEllipse(centerPointColor, null, playerCenterPoint, 10, 10);                
                 }
 
                 //drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, 640.0, 480.0));
@@ -522,6 +544,11 @@ namespace StarFlowers
                     greenScreenPixelData,
                     depthWidth * ((playerOpacityMaskImage.Format.BitsPerPixel + 7) / 8),
                     0);
+            }
+
+            if (playerCenterPoint != null)
+            {
+                this.setSpawnPoint(this.stretchDepthPointToScreen(playerCenterPoint));
             }
         }
 
