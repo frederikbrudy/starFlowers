@@ -112,6 +112,19 @@ namespace StarFlowers
             }
         }
 
+        private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+
+        }
+
+        private void key_down(object sender, KeyEventArgs e)
+        {
+            if (e.Key.Equals(System.Windows.Input.Key.Escape))
+            {
+                System.Windows.Application.Current.Shutdown();
+            }
+        }
+
         private void SensorAllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
             if (null == sensor)
