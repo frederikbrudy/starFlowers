@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -58,10 +59,10 @@ namespace StarFlowers
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            this.WindowStyle = WindowStyle.None;
-            this.WindowState = WindowState.Maximized;
+            //this.WindowStyle = WindowStyle.None;
+            //this.WindowState = WindowState.Maximized;
             this.Background = Brushes.Black;
-            this.Cursor = System.Windows.Input.Cursors.None;
+            //this.Cursor = System.Windows.Input.Cursors.None;
 
             drawingGroup = new DrawingGroup();
             imageSource = new DrawingImage(drawingGroup);
@@ -159,23 +160,32 @@ namespace StarFlowers
             {
                 if (skeletonFrame != null)
                 {
-                    skeletons = new Skeleton[skeletonFrame.SkeletonArrayLength];
-                    skeletonFrame.CopySkeletonDataTo(skeletons);
+                    Skeleton[] tempSkeletons = new Skeleton[skeletonFrame.SkeletonArrayLength];
+                    List<Skeleton> trackedSkeletons = new List<Skeleton>();
+
+                    skeletonFrame.CopySkeletonDataTo(tempSkeletons);
+                    foreach (Skeleton potentialSkeleton in tempSkeletons )
+                    {
+                        if (potentialSkeleton.TrackingState == SkeletonTrackingState.Tracked)
+                        {
+                            trackedSkeletons.Add(potentialSkeleton);
+                        }
+                    }
+                    // in skeletons sind nun nur noch Skeletons mit Status "tracked"
+                    skeletons = trackedSkeletons.ToArray();
                     skeletonReceived = true;
                 }
             }
 
             if (true == depthReceived) // Tiefendaten vorhanden
             {
+                
                 // mindestens ein Skeleton gefunden
-                Console.WriteLine("skeletonReceived ist true:" + (skeletonReceived == true));
-                Console.WriteLine("skeletons.Lenght:" + skeletons.Length);
-                Console.WriteLine("skeleton 1 Tracked:" + (skeletons[0].TrackingState == SkeletonTrackingState.Tracked));
-
                 bool skeletonTracked = (skeletonReceived == true
                                         && skeletons.Length > 0 
                                         && skeletons[0].TrackingState == SkeletonTrackingState.Tracked);
 
+                // wenn Skeleton da: gruener Mittelpunkt, sonst Rot
                 centerPointColor = (skeletonTracked == true) ? Brushes.Green : Brushes.Red;
 
                 long playerXPoints = 0, playerYPoints = 0, playerPointCount = 0;
@@ -195,10 +205,9 @@ namespace StarFlowers
                     for (int x = 0; x < depthWidth; ++x)
                     {
                         int depthIndex = x + (y * depthWidth);
-
                         DepthImagePixel depthPixel = depthPixels[depthIndex];
 
-                        if (skeletonTracked == true)
+                        if (skeletonTracked)
                         {
                             int player = depthPixel.PlayerIndex;
                             somethingToTrackExists = (player > 0); // Pixel ist einem Spieler zugeordnet
@@ -209,7 +218,7 @@ namespace StarFlowers
                             // Pixel ist zwischen 0,8m und 2m entfernt
                         }
 
-                        if (somethingToTrackExists == true)
+                        if (somethingToTrackExists)
                         {
                             ColorImagePoint colorImagePoint = colorCoordinates[depthIndex];
                             int colorInDepthX = colorImagePoint.X / colorToDepthDivisor;
@@ -218,7 +227,7 @@ namespace StarFlowers
                             if (colorInDepthX > 0 && colorInDepthX < depthWidth
                                 && colorInDepthY > 0 && colorInDepthY < depthHeight)
                             {
-                                if (skeletonTracked == false)
+                                if (!skeletonTracked)
                                 {
                                     /* wenn kein Skeleton erkannt, alle Punkte aus dem Depth-Shape addieren,
                                      * um später Mittelpunkt zu berechnen */
@@ -235,7 +244,7 @@ namespace StarFlowers
                     }
                 } // end for-loops
 
-                if (skeletonTracked == false)
+                if (!skeletonTracked)
                 {
                     // Mittelpunkt aus Depth Shape berechnen
                     if (playerPointCount > 0)
