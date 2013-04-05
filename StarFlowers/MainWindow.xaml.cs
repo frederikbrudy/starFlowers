@@ -1,5 +1,6 @@
 ﻿using Particles;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -400,23 +401,32 @@ namespace StarFlowers
             {
                 if (skeletonFrame != null)
                 {
-                    skeletons = new Skeleton[skeletonFrame.SkeletonArrayLength];
-                    skeletonFrame.CopySkeletonDataTo(skeletons);
+                    Skeleton[] tempSkeletons = new Skeleton[skeletonFrame.SkeletonArrayLength];
+                    List<Skeleton> trackedSkeletons = new List<Skeleton>();
+
+                    skeletonFrame.CopySkeletonDataTo(tempSkeletons);
+                    foreach (Skeleton potentialSkeleton in tempSkeletons )
+                    {
+                        if (potentialSkeleton.TrackingState == SkeletonTrackingState.Tracked)
+                        {
+                            trackedSkeletons.Add(potentialSkeleton);
+                        }
+                    }
+                    // in skeletons sind nun nur noch Skeletons mit Status "tracked"
+                    skeletons = trackedSkeletons.ToArray();
                     skeletonReceived = true;
                 }
             }
 
             if (true == depthReceived) // Tiefendaten vorhanden
             {
+                
                 // mindestens ein Skeleton gefunden
-                //Console.WriteLine("skeletonReceived ist true:" + (skeletonReceived == true));
-                //Console.WriteLine("skeletons.Lenght:" + skeletons.Length);
-                //Console.WriteLine("skeleton 1 Tracked:" + (skeletons[0].TrackingState == SkeletonTrackingState.Tracked));
-
                 bool skeletonTracked = (skeletonReceived == true
                                         && skeletons.Length > 0 
                                         && skeletons[0].TrackingState == SkeletonTrackingState.Tracked);
 
+                // wenn Skeleton da: gruener Mittelpunkt, sonst Rot
                 centerPointColor = (skeletonTracked == true) ? Brushes.Green : Brushes.Red;
 
                 long playerXPoints = 0, playerYPoints = 0, playerPointCount = 0;
@@ -436,21 +446,20 @@ namespace StarFlowers
                     for (int x = 0; x < depthWidth; ++x)
                     {
                         int depthIndex = x + (y * depthWidth);
-
                         DepthImagePixel depthPixel = depthPixels[depthIndex];
 
-                        if (skeletonTracked == true)
+                        if (skeletonTracked)
                         {
                             int player = depthPixel.PlayerIndex;
                             somethingToTrackExists = (player > 0); // Pixel ist einem Spieler zugeordnet
                         }
                         else
                         {
-                            somethingToTrackExists = (depthPixel.Depth > 500 && depthPixel.Depth < 1000);
+                            somethingToTrackExists = (depthPixel.Depth > 500 && depthPixel.Depth < 2000);
                             // Pixel ist zwischen 0,8m und 2m entfernt
                         }
 
-                        if (somethingToTrackExists == true)
+                        if (somethingToTrackExists)
                         {
                             ColorImagePoint colorImagePoint = colorCoordinates[depthIndex];
                             int colorInDepthX = colorImagePoint.X / colorToDepthDivisor;
@@ -459,7 +468,7 @@ namespace StarFlowers
                             if (colorInDepthX > 0 && colorInDepthX < depthWidth
                                 && colorInDepthY > 0 && colorInDepthY < depthHeight)
                             {
-                                if (skeletonTracked == false)
+                                if (!skeletonTracked)
                                 {
                                     /* wenn kein Skeleton erkannt, alle Punkte aus dem Depth-Shape addieren,
                                      * um später Mittelpunkt zu berechnen */
@@ -476,7 +485,7 @@ namespace StarFlowers
                     }
                 } // end for-loops
                 
-                if (skeletonTracked == false)
+                if (!skeletonTracked)
                 {
                     // Mittelpunkt aus Depth Shape berechnen
                     if (playerPointCount > 0)
@@ -494,6 +503,8 @@ namespace StarFlowers
                     // Mittelpunkt als Position vom Skeleton definieren
                     foreach (Skeleton skel in skeletons)
                     {
+
+
                         if (skel.TrackingState == SkeletonTrackingState.PositionOnly)
                         {
                             playerCenterPoint = SkeletonPointToScreen(skel.Position);
@@ -525,7 +536,7 @@ namespace StarFlowers
                                 handCenterPoint.Y = (rightHandPoint.Y + leftHandPoint.Y) / 2;
 
                                 double distance = Math.Abs(rightHandPoint.Y - leftHandPoint.Y) / 2;
-                                this.HandCenterThickness = distance / 3.5;
+                                this.HandCenterThickness = distance / 1.5;
                             }
                         }
                     }
@@ -558,20 +569,21 @@ namespace StarFlowers
                      
                     dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, 640.0, 480.0));
 
-                    dc.DrawEllipse(centerPointColor, null, playerCenterPoint, 10, 10);
+              
+                    //dc.DrawEllipse(centerPointColor, null, playerCenterPoint, 10, 10);
 
-                    if (handCenterPoint.X > 0.0)
-                    {
-                        dc.DrawEllipse(Brushes.Yellow, null, handCenterPoint, HandCenterThickness, HandCenterThickness);
-                    }
-                    if (leftHandPoint.X > 0.0)
-                    {
-                        dc.DrawEllipse(Brushes.Blue, null, leftHandPoint, MouseThickness, MouseThickness);
-                    }
-                    if (rightHandPoint.X > 0.0)
-                    {
-                        dc.DrawEllipse(Brushes.Red, null, rightHandPoint, MouseThickness, MouseThickness);
-                    }
+                    //if (handCenterPoint.X > 0.0)
+                    //{
+                    //    dc.DrawEllipse(Brushes.Yellow, null, handCenterPoint, HandCenterThickness, HandCenterThickness);
+                    //}
+                    //if (leftHandPoint.X > 0.0)
+                    //{
+                    //    dc.DrawEllipse(Brushes.Blue, null, leftHandPoint, MouseThickness, MouseThickness);
+                    //}
+                    //if (rightHandPoint.X > 0.0)
+                    //{
+                    //    dc.DrawEllipse(Brushes.Red, null, rightHandPoint, MouseThickness, MouseThickness);
+                    //}
                 }
 
                 //drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, 640.0, 480.0));
