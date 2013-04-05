@@ -110,6 +110,12 @@ namespace StarFlowers
         private double currentWidth;
         private double currentHeight;
 
+        Point rightHandPoint = new Point();
+        Point leftHandPoint = new Point();
+        Point handCenterPoint = new Point();
+        private double HandCenterThickness = 10;
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -188,6 +194,10 @@ namespace StarFlowers
         {
             Console.WriteLine(this.ActualWidth);
             Console.WriteLine(this.ActualHeight);
+            //if (this.sensor != null)
+            //{
+            //    this.sensor.Stop();
+            //}
         }
 
         private void key_down(object sender, KeyEventArgs e)
@@ -225,6 +235,8 @@ namespace StarFlowers
             this.currentHeight = this.ActualHeight;
             //Console.WriteLine("Width: " + this.Width + ", Height: " + this.Height);
             //Console.WriteLine("ActualWidth: " + this.ActualWidth + ", ActualHeight: " + this.ActualHeight);
+            //this.rightHandPoint = new Point(this.currentWidth / 2, this.currentHeight / 2);
+            //this.leftHandPoint = new Point(this.currentWidth / 2, this.currentHeight / 2);
         }
 
         private void mouse_move(object sender, MouseEventArgs e)
@@ -245,9 +257,9 @@ namespace StarFlowers
 
             screenPoint.X = depthPoint.X * this.currentWidth / 640.0;
             screenPoint.Y = depthPoint.Y * this.currentHeight / 480.0;
-            Console.WriteLine("depthPoint.X: " + depthPoint.X + ", depthPoint.Y: " + depthPoint.Y);
-            Console.WriteLine("screenPoint.X: " + screenPoint.X + ", screenPoint.Y: " + screenPoint.Y);
-            Console.WriteLine("currentWidth: " + currentWidth + ", currentHeight: " + currentHeight);
+            //Console.WriteLine("depthPoint.X: " + depthPoint.X + ", depthPoint.Y: " + depthPoint.Y);
+            //Console.WriteLine("screenPoint.X: " + screenPoint.X + ", screenPoint.Y: " + screenPoint.Y);
+            //Console.WriteLine("currentWidth: " + currentWidth + ", currentHeight: " + currentHeight);
 
             return screenPoint;
         }
@@ -463,7 +475,7 @@ namespace StarFlowers
                         }
                     }
                 } // end for-loops
-
+                
                 if (skeletonTracked == false)
                 {
                     // Mittelpunkt aus Depth Shape berechnen
@@ -482,15 +494,45 @@ namespace StarFlowers
                     // Mittelpunkt als Position vom Skeleton definieren
                     foreach (Skeleton skel in skeletons)
                     {
-                        if (skel.TrackingState == SkeletonTrackingState.Tracked
-                            || skel.TrackingState == SkeletonTrackingState.PositionOnly)
+                        if (skel.TrackingState == SkeletonTrackingState.PositionOnly)
                         {
                             playerCenterPoint = SkeletonPointToScreen(skel.Position);
+                        }
+                        else if (skel.TrackingState == SkeletonTrackingState.Tracked)
+                        {
+                            playerCenterPoint = SkeletonPointToScreen(skel.Position);
+                            JointCollection joints = skel.Joints;
+                            // get the joint
+                            Joint rightHand = skel.Joints[JointType.HandRight];
+                            Joint leftHand = skel.Joints[JointType.HandLeft];
+                            if (rightHand.TrackingState == JointTrackingState.Tracked
+                                || rightHand.TrackingState == JointTrackingState.Inferred)
+                            {
+                                rightHandPoint = SkeletonPointToScreen(rightHand.Position);
+                            }
+
+                            if (leftHand.TrackingState == JointTrackingState.Tracked
+                                || leftHand.TrackingState == JointTrackingState.Inferred)
+                            {
+                                leftHandPoint = SkeletonPointToScreen(leftHand.Position);
+                            }
+
+                            if (leftHandPoint != null && rightHandPoint != null)
+                            {
+                                handCenterPoint.X = leftHandPoint.X + Math.Abs(rightHandPoint.X - leftHandPoint.X) / 2;
+                                handCenterPoint.Y = leftHandPoint.Y + Math.Abs(rightHandPoint.Y - leftHandPoint.Y) / 2;
+                                handCenterPoint.X = (rightHandPoint.X + leftHandPoint.X) / 2;
+                                handCenterPoint.Y = (rightHandPoint.Y + leftHandPoint.Y) / 2;
+
+                                double distance = Math.Abs(rightHandPoint.Y - leftHandPoint.Y) / 2;
+                                this.HandCenterThickness = distance / 3.5;
+                            }
                         }
                     }
                 }
 
                 this.doFrameCalculation();
+                
 
             }
 
@@ -516,7 +558,20 @@ namespace StarFlowers
                      
                     dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, 640.0, 480.0));
 
-                    dc.DrawEllipse(centerPointColor, null, playerCenterPoint, 10, 10);                
+                    dc.DrawEllipse(centerPointColor, null, playerCenterPoint, 10, 10);
+
+                    if (handCenterPoint.X > 0.0)
+                    {
+                        dc.DrawEllipse(Brushes.Yellow, null, handCenterPoint, HandCenterThickness, HandCenterThickness);
+                    }
+                    if (leftHandPoint.X > 0.0)
+                    {
+                        dc.DrawEllipse(Brushes.Blue, null, leftHandPoint, MouseThickness, MouseThickness);
+                    }
+                    if (rightHandPoint.X > 0.0)
+                    {
+                        dc.DrawEllipse(Brushes.Red, null, rightHandPoint, MouseThickness, MouseThickness);
+                    }
                 }
 
                 //drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, 640.0, 480.0));
