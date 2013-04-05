@@ -50,6 +50,11 @@ namespace Particles
             catch { }
         }
 
+        public void SpawnParticle(Point position, double speed, System.Windows.Media.Color color, double size, double life)
+        {
+            this.SpawnParticle(new Point3D(position.X, position.Y, 0.0), speed, color, size, life);
+        }
+
         public Model3D CreateParticleSystem(int maxCount, System.Windows.Media.Color color)
         {
             ParticleSystem ps = new ParticleSystem(maxCount, color);

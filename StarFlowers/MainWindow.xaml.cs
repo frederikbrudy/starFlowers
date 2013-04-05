@@ -49,7 +49,7 @@ namespace StarFlowers
 
         private Point playerCenterPoint; // Mittelpunkt des Shapes von einem Player
 
-        private Brush centerPointColor;
+        
 
         private DrawingGroup drawingGroup;
         private DrawingImage imageSource;
@@ -62,7 +62,9 @@ namespace StarFlowers
         /// <summary>
         /// the spawn point of the particlesystems
         /// </summary>
-        private Point3D spawnPoint;
+        //private Point3D spawnPoint;
+
+        private Dictionary<Color, Point3D> spawnPoints;
 
         /// <summary>
         /// elapsed time since last frame, in seconds
@@ -92,7 +94,7 @@ namespace StarFlowers
         /// <summary>
         /// Brush used to draw mouse point
         /// </summary>
-        private Brush MouseBrush = Brushes.Blue;
+        //private Brush MouseBrush = Brushes.Blue;
 
         /// <summary>
         /// Thickness of body center ellipse
@@ -116,6 +118,23 @@ namespace StarFlowers
         Point handCenterPoint = new Point();
         private double HandCenterThickness = 10;
 
+        private Color colorLeftHand = Colors.Orchid;
+        private Color colorRightHand = Colors.Blue;
+        private Color colorBodyCenter = Colors.Turquoise;
+        private Color colorMousePoint = Colors.Green;
+        private Color colorHandCenterPoint = Colors.Yellow;
+        private Brush brushLeftHand;
+        private Brush brushRightHand;
+        private Brush brushMousePoint;
+        private Brush brushBodyCenter;
+        private Brush brushHandCenterPoint;
+
+        private Brush brushCenterPoint;
+        private Color colorCenterPointTracked = Colors.Green;
+        private Color colorCenterPointNotTracked = Colors.Red;
+        private Brush brushCenterPointTracked;
+        private Brush brushCenterPointNotTracked;
+        private bool trackingSkeleton;
 
         public MainWindow()
         {
@@ -134,7 +153,7 @@ namespace StarFlowers
             this.Top = size.Top;
             this.initParticleSystem();
             this.initDrawingData();
-            this.initBrushes(Colors.Red);
+            this.initBrushes();
             this.WindowStyle = WindowStyle.None;
             this.WindowState = WindowState.Maximized;
             this.Background = Brushes.Black;
@@ -242,14 +261,22 @@ namespace StarFlowers
 
         private void mouse_move(object sender, MouseEventArgs e)
         {
-            this.mousePosition = Mouse.GetPosition(this);
-            this.setSpawnPoint(this.mousePosition);
-            
+            //this.mousePosition = Mouse.GetPosition(this);
+            //this.setMouseSpawnPoint(this.mousePosition);
         }
 
-        private void setSpawnPoint(Point newPoint2D)
+        private void setMouseSpawnPoint(Point newPoint2D)
         {
-            this.spawnPoint = new Point3D(newPoint2D.X - (this.Width / 2), (this.Height / 2) - newPoint2D.Y, 0.0);
+            this.spawnPoints[this.colorMousePoint] = this.pointTo3DPoint(newPoint2D);
+        }
+
+        //private void setBodyCenterSpawnPoint2(Point newPoint2D)
+        //{
+            
+        //}
+
+        private Point3D pointTo3DPoint(Point point2D){
+            return new Point3D(point2D.X - (this.Width / 2), (this.Height / 2) - point2D.Y, 0.0);
         }
 
         private Point stretchDepthPointToScreen(Point depthPoint)
@@ -272,17 +299,25 @@ namespace StarFlowers
             frameTimer.Interval = TimeSpan.FromSeconds(1.0 / 60.0);
             //frameTimer.Start();
 
-            this.spawnPoint = new Point3D(0.0, 0.0, 0.0);
+            this.spawnPoints = new Dictionary<Color,Point3D>();
+            //this.spawnPoint = new Point3D(0.0, 0.0, 0.0);
             this.lastTick = Environment.TickCount;
 
             pm = new ParticleSystemManager();
 
             //this.ParticleHost.Children.Add
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Gray));
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Red));
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Silver));
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Orange));
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Yellow));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorBodyCenter));
+            this.spawnPoints.Add(this.colorBodyCenter, new Point3D(0, 0, 0));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorLeftHand));
+            this.spawnPoints.Add(this.colorLeftHand, new Point3D(0, 0, 0));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorRightHand));
+            this.spawnPoints.Add(this.colorRightHand, new Point3D(0, 0,0));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorMousePoint));
+            this.spawnPoints.Add(this.colorMousePoint, new Point3D(0, 0, 0));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorHandCenterPoint));
+            this.spawnPoints.Add(this.colorHandCenterPoint, new Point3D(0, 0, 0));
+            //this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Gray));
+            //this.spawnPoints.Add(Colors.Gray, new Point3D(0, 0, 0));
 
             rand = new Random(this.GetHashCode());
 
@@ -301,12 +336,50 @@ namespace StarFlowers
             MouseImage.Source = this.imageSourceMouse;
         }
 
-        private void initBrushes(Color color)
+        private void initBrushes()
+        {
+            //RadialGradientBrush b = new RadialGradientBrush();
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, color.R, color.G, color.B), 0.25));
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, color.R, color.G, color.B), 1.0));
+            //MouseBrush = b;
+
+            
+
+            //b = new RadialGradientBrush();
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, this.colorLeftHand.R, this.colorLeftHand.G, this.colorLeftHand.B), 0.25));
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, this.colorLeftHand.R, this.colorLeftHand.G, this.colorLeftHand.B), 1.0));
+            //this.brushLeftHand = b;
+
+            //b = new RadialGradientBrush();
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, this.colorRightHand.R, this.colorRightHand.G, this.colorRightHand.B), 0.25));
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, this.colorRightHand.R, this.colorRightHand.G, this.colorRightHand.B), 1.0));
+            //this.brushRightHand = b;
+
+            //b = new RadialGradientBrush();
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, this.colorMousePoint.R, this.colorMousePoint.G, this.colorMousePoint.B), 0.25));
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, this.colorMousePoint.R, this.colorMousePoint.G, this.colorMousePoint.B), 1.0));
+            //this.brushMousePoint = b;
+
+            //b = new RadialGradientBrush();
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, this.colorBodyCenter.R, this.colorBodyCenter.G, this.colorBodyCenter.B), 0.25));
+            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, this.colorBodyCenter.R, this.colorBodyCenter.G, this.colorBodyCenter.B), 1.0));
+            //this.brushBodyCenter = b;
+            this.brushLeftHand = this.getBrushFromColor(this.colorLeftHand);
+            this.brushRightHand = this.getBrushFromColor(this.colorRightHand);
+            //this.MouseBrush = this.getBrushFromColor(this.colorMousePoint);
+            this.brushMousePoint = this.getBrushFromColor(this.colorMousePoint);
+            this.brushBodyCenter = this.getBrushFromColor(this.colorBodyCenter);
+            this.brushCenterPointTracked = this.getBrushFromColor(this.colorCenterPointTracked);
+            this.brushCenterPointNotTracked = this.getBrushFromColor(this.colorCenterPointNotTracked);
+            this.brushHandCenterPoint = this.getBrushFromColor(this.colorHandCenterPoint);
+        }
+
+        private Brush getBrushFromColor(Color color)
         {
             RadialGradientBrush b = new RadialGradientBrush();
             b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, color.R, color.G, color.B), 0.25));
             b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, color.R, color.G, color.B), 1.0));
-            MouseBrush = b;
+            return b;
         }
 
         private void OnFrame(object sender, EventArgs e)
@@ -333,18 +406,18 @@ namespace StarFlowers
             }
 
             pm.Update((float)elapsed);
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Red, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Orange, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Gray, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Red, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Orange, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Gray, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Red, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Yellow, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Silver, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-            //pm.SpawnParticle(this.spawnPoint, 10.0, Colors.Yellow, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+            foreach (KeyValuePair<Color, Point3D> sp in this.spawnPoints)
+            {
+                // do something with entry.Value or entry.Key
+                if (sp.Value.X > 0.01 || sp.Value.X < -0.01)
+                {
+                    if (sp.Key != this.colorBodyCenter || (sp.Key == this.colorBodyCenter && !this.trackingSkeleton))
+                    {
+                        pm.SpawnParticle(sp.Value, 10.0, sp.Key, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+                    }
+                }
+
+            }
 
             double c = Math.Cos(this.totalElapsed);
             double s = Math.Sin(this.totalElapsed);
@@ -427,7 +500,8 @@ namespace StarFlowers
                                         && skeletons[0].TrackingState == SkeletonTrackingState.Tracked);
 
                 // wenn Skeleton da: gruener Mittelpunkt, sonst Rot
-                centerPointColor = (skeletonTracked == true) ? Brushes.Green : Brushes.Red;
+                brushCenterPoint = (skeletonTracked == true) ? this.brushCenterPointTracked : this.brushCenterPointNotTracked;
+                this.trackingSkeleton = skeletonTracked;
 
                 long playerXPoints = 0, playerYPoints = 0, playerPointCount = 0;
 
@@ -520,12 +594,15 @@ namespace StarFlowers
                                 || rightHand.TrackingState == JointTrackingState.Inferred)
                             {
                                 rightHandPoint = SkeletonPointToScreen(rightHand.Position);
+                                this.spawnPoints[this.colorRightHand] = pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint));
                             }
 
                             if (leftHand.TrackingState == JointTrackingState.Tracked
                                 || leftHand.TrackingState == JointTrackingState.Inferred)
                             {
                                 leftHandPoint = SkeletonPointToScreen(leftHand.Position);
+                                this.spawnPoints[this.colorLeftHand] = pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint));
+                                
                             }
 
                             if (leftHandPoint != null && rightHandPoint != null)
@@ -535,13 +612,17 @@ namespace StarFlowers
                                 handCenterPoint.X = (rightHandPoint.X + leftHandPoint.X) / 2;
                                 handCenterPoint.Y = (rightHandPoint.Y + leftHandPoint.Y) / 2;
 
-                                double distance = Math.Abs(rightHandPoint.Y - leftHandPoint.Y) / 2;
-                                this.HandCenterThickness = distance / 1.5;
+                                double distance = Math.Sqrt(Math.Pow(rightHandPoint.X - leftHandPoint.X, 2) + Math.Pow(rightHandPoint.Y - leftHandPoint.Y, 2));
+                                this.HandCenterThickness = distance / 8;
+
+                                this.spawnPoints[this.colorHandCenterPoint] = pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint));
+                                
                             }
                         }
                     }
+                    
                 }
-
+                
                 this.doFrameCalculation();
                 
 
@@ -569,21 +650,24 @@ namespace StarFlowers
                      
                     dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, 640.0, 480.0));
 
-              
-                    dc.DrawEllipse(centerPointColor, null, playerCenterPoint, 10, 10);
+                    if (!this.trackingSkeleton)
+                    {
+                        dc.DrawEllipse(this.brushCenterPoint, null, playerCenterPoint, 10, 10);
+                    }
 
-                    //if (handCenterPoint.X > 0.0)
-                    //{
-                    //    dc.DrawEllipse(Brushes.Yellow, null, handCenterPoint, HandCenterThickness, HandCenterThickness);
-                    //}
-                    //if (leftHandPoint.X > 0.0)
-                    //{
-                    //    dc.DrawEllipse(Brushes.Blue, null, leftHandPoint, MouseThickness, MouseThickness);
-                    //}
-                    //if (rightHandPoint.X > 0.0)
-                    //{
-                    //    dc.DrawEllipse(Brushes.Red, null, rightHandPoint, MouseThickness, MouseThickness);
-                    //}
+                    if (handCenterPoint.X > 0.0)
+                    {
+                        dc.DrawEllipse(this.brushHandCenterPoint, null, handCenterPoint, HandCenterThickness, HandCenterThickness);
+                    }
+                    if (leftHandPoint.X > 0.0)
+                    {
+                        dc.DrawEllipse(this.brushLeftHand, null, leftHandPoint, MouseThickness, MouseThickness);
+                    }
+                    if (rightHandPoint.X > 0.0)
+                    {
+                        dc.DrawEllipse(this.brushRightHand, null, rightHandPoint, MouseThickness, MouseThickness);
+                    }
+                    
                 }
 
                 //drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, 640.0, 480.0));
@@ -616,7 +700,11 @@ namespace StarFlowers
             if (playerCenterPoint != null)
             {
                 //this.setSpawnPoint(this.stretchDepthPointToScreen(playerCenterPoint));
-                this.setSpawnPoint(this.stretchDepthPointToScreen(handCenterPoint));
+                if (!this.trackingSkeleton)
+                {
+                    //this.setBodyCenterSpawnPoint(this.stretchDepthPointToScreen(playerCenterPoint));
+                    this.spawnPoints[this.colorBodyCenter] = this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint));
+                }
             }
         }
 
