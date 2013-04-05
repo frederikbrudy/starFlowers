@@ -14,6 +14,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Kinect;
+using System.IO;
+
 
 namespace StarFlowers
 {
@@ -22,6 +25,34 @@ namespace StarFlowers
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const DepthImageFormat DepthFormat = DepthImageFormat.Resolution640x480Fps30;
+        private const ColorImageFormat ColorFormat = ColorImageFormat.RgbResolution640x480Fps30;                
+        private KinectSensor sensor;
+        // Bitmap mit Farbinformation
+        private WriteableBitmap colorBitmap;
+        // Bitmap mit Opacity-Maske
+        private WriteableBitmap playerOpacityMaskImage;
+        // Farbdaten von der Kamera
+        private byte[] colorPixels;
+        // Tiefendaten von der Kamera
+        private DepthImagePixel[] depthPixels;
+        private int[] greenScreenPixelData;
+        // x- und y-Werte
+        private ColorImagePoint[] colorCoordinates;
+        // Groesse vom Tiefenbild
+        private int depthWidth, depthHeight;
+
+        private int opaquePixelValue = -1;
+
+        private int colorToDepthDivisor;
+
+        private Point playerCenterPoint; // Mittelpunkt des Shapes von einem Player
+
+        private Brush centerPointColor;
+
+        private DrawingGroup drawingGroup;
+        private DrawingImage imageSource;
+        
         /// <summary>
         /// dispatcher for frame events
         /// </summary>
@@ -70,9 +101,9 @@ namespace StarFlowers
         /// <summary>
         /// Drawing group for mouse position output
         /// </summary>
-        private DrawingGroup drawingGroup;
+        private DrawingGroup drawingGroup2;
 
-        private DrawingImage imageSource;
+        private DrawingImage imageSource2;
 
         public MainWindow()
         {
@@ -92,6 +123,58 @@ namespace StarFlowers
             this.initParticleSystem();
             this.initDrawingData();
             this.initBrushes(Colors.Red);
+            this.WindowStyle = WindowStyle.None;
+            this.WindowState = WindowState.Maximized;
+            this.Background = Brushes.Black;
+            this.Cursor = System.Windows.Input.Cursors.None;
+
+            drawingGroup = new DrawingGroup();
+            imageSource = new DrawingImage(drawingGroup);
+            OverlayImage.Source = imageSource;
+
+            // Look through all sensors and start the first connected one.
+            foreach (var potentialSensor in KinectSensor.KinectSensors)
+            {
+                //Status should e.g. not be "Initializing" or "NotPowered"
+                if (potentialSensor.Status == KinectStatus.Connected)
+                {
+                    sensor = potentialSensor;
+                    break;
+                }
+            }
+
+            if (null != sensor)
+            {
+                sensor.DepthStream.Enable(DepthFormat);
+                sensor.ColorStream.Enable(ColorFormat);
+                sensor.SkeletonStream.Enable();
+
+                depthWidth = sensor.DepthStream.FrameWidth;
+                depthHeight = sensor.DepthStream.FrameHeight;
+
+                int colorWidth = sensor.ColorStream.FrameWidth;
+                int colorHeight = sensor.ColorStream.FrameHeight;
+
+                colorToDepthDivisor = colorWidth / depthWidth;
+
+                depthPixels = new DepthImagePixel[sensor.DepthStream.FramePixelDataLength];
+                colorPixels = new byte[sensor.ColorStream.FramePixelDataLength];
+                greenScreenPixelData = new int[sensor.DepthStream.FramePixelDataLength];
+                colorCoordinates = new ColorImagePoint[sensor.DepthStream.FramePixelDataLength];
+                colorBitmap = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgr32, null);
+                MyImage.Source = colorBitmap;
+
+                sensor.AllFramesReady += SensorAllFramesReady;
+
+                try
+                {
+                    this.sensor.Start();
+                }
+                catch (IOException)
+                {
+                    this.sensor = null;
+                }
+            }
         }
 
         private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -164,13 +247,13 @@ namespace StarFlowers
         private void initDrawingData()
         {
             // Create the drawing group we'll use for drawing
-            this.drawingGroup = new DrawingGroup();
+            this.drawingGroup2 = new DrawingGroup();
 
             // Create an image source that we can use in our image control
-            this.imageSource = new DrawingImage(this.drawingGroup);
+            this.imageSource2 = new DrawingImage(this.drawingGroup2);
 
             // Display the drawing using our image control
-            MouseImage.Source = this.imageSource;
+            MouseImage.Source = this.imageSource2;
         }
 
         private void initBrushes(Color color)
@@ -218,7 +301,7 @@ namespace StarFlowers
 
             //this.spawnPoint = new Point3D(s * 400.0, c * 200.0, 0.0);
 
-            //using (DrawingContext dc = this.drawingGroup.Open())
+            //using (DrawingContext dc = this.drawingGroup2.Open())
             //{
             //    // Draw a transparent background to set the render size
             //    dc.DrawRectangle(Brushes.Transparent, null, new Rect(0.0, 0.0, this.Width, this.Height));
@@ -230,8 +313,209 @@ namespace StarFlowers
             //    }
 
             //    // prevent drawing outside of our render area
-            //    //this.drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, RenderWidth, RenderHeight));
+            //    //this.drawingGroup2.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, RenderWidth, RenderHeight));
             //}
+        }
+
+        private void SensorAllFramesReady(object sender, AllFramesReadyEventArgs e)
+        {
+            if (null == sensor)
+            {
+                return;
+            }
+
+            bool depthReceived = false;
+            bool colorReceived = false;
+            bool skeletonReceived = false;
+            Skeleton[] skeletons = new Skeleton[0];
+
+            using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
+            {
+                if (null != depthFrame)
+                {
+                    depthFrame.CopyDepthImagePixelDataTo(depthPixels);
+                    depthReceived = true;
+                }
+            }
+
+            using (ColorImageFrame colorFrame = e.OpenColorImageFrame())
+            {
+                if (null != colorFrame)
+                {
+                    colorFrame.CopyPixelDataTo(colorPixels);
+                    colorReceived = true;
+                }
+            }
+
+            using (SkeletonFrame skeletonFrame = e.OpenSkeletonFrame())
+            {
+                if (skeletonFrame != null)
+                {
+                    skeletons = new Skeleton[skeletonFrame.SkeletonArrayLength];
+                    skeletonFrame.CopySkeletonDataTo(skeletons);
+                    skeletonReceived = true;
+                }
+            }
+
+            if (true == depthReceived) // Tiefendaten vorhanden
+            {
+                // mindestens ein Skeleton gefunden
+                //Console.WriteLine("skeletonReceived ist true:" + (skeletonReceived == true));
+                //Console.WriteLine("skeletons.Lenght:" + skeletons.Length);
+                //Console.WriteLine("skeleton 1 Tracked:" + (skeletons[0].TrackingState == SkeletonTrackingState.Tracked));
+
+                bool skeletonTracked = (skeletonReceived == true
+                                        && skeletons.Length > 0 
+                                        && skeletons[0].TrackingState == SkeletonTrackingState.Tracked);
+
+                centerPointColor = (skeletonTracked == true) ? Brushes.Green : Brushes.Red;
+
+                long playerXPoints = 0, playerYPoints = 0, playerPointCount = 0;
+
+                bool somethingToTrackExists = false;
+
+                sensor.CoordinateMapper.MapDepthFrameToColorFrame(DepthFormat,
+                                                                     depthPixels,
+                                                                     ColorFormat,
+                                                                     colorCoordinates);
+
+                Array.Clear(greenScreenPixelData, 0, greenScreenPixelData.Length);
+
+                // iteriert ueber alle Zeilen und Spalten des Tiefenbilds
+                for (int y = 0; y < depthHeight; ++y)
+                {
+                    for (int x = 0; x < depthWidth; ++x)
+                    {
+                        int depthIndex = x + (y * depthWidth);
+
+                        DepthImagePixel depthPixel = depthPixels[depthIndex];
+
+                        if (skeletonTracked == true)
+                        {
+                            int player = depthPixel.PlayerIndex;
+                            somethingToTrackExists = (player > 0); // Pixel ist einem Spieler zugeordnet
+                        }
+                        else
+                        {
+                            somethingToTrackExists = (depthPixel.Depth > 500 && depthPixel.Depth < 2000);
+                            // Pixel ist zwischen 0,8m und 2m entfernt
+                        }
+
+                        if (somethingToTrackExists == true)
+                        {
+                            ColorImagePoint colorImagePoint = colorCoordinates[depthIndex];
+                            int colorInDepthX = colorImagePoint.X / colorToDepthDivisor;
+                            int colorInDepthY = colorImagePoint.Y / colorToDepthDivisor;
+
+                            if (colorInDepthX > 0 && colorInDepthX < depthWidth
+                                && colorInDepthY > 0 && colorInDepthY < depthHeight)
+                            {
+                                if (skeletonTracked == false)
+                                {
+                                    /* wenn kein Skeleton erkannt, alle Punkte aus dem Depth-Shape addieren,
+                                     * um später Mittelpunkt zu berechnen */
+                                    playerXPoints += colorInDepthX;
+                                    playerYPoints += colorInDepthY;
+                                    playerPointCount++;
+                                }
+                                    
+                                int greenScreenIndex = colorInDepthX + (colorInDepthY * depthWidth);
+                                greenScreenPixelData[greenScreenIndex] = opaquePixelValue;
+                                greenScreenPixelData[greenScreenIndex - 1] = opaquePixelValue;
+                            }
+                        }
+                    }
+                } // end for-loops
+
+                if (skeletonTracked == false)
+                {
+                    // Mittelpunkt aus Depth Shape berechnen
+                    if (playerPointCount > 0)
+                    {
+                        playerCenterPoint = new Point((double)playerXPoints / playerPointCount,
+                                                        (double)playerYPoints / playerPointCount);
+                    }
+                    else
+                    {
+                        playerCenterPoint = new Point(0.0, 0.0);
+                    }
+                }
+                else
+                {
+                    // Mittelpunkt als Position vom Skeleton definieren
+                    foreach (Skeleton skel in skeletons)
+                    {
+                        if (skel.TrackingState == SkeletonTrackingState.Tracked
+                            || skel.TrackingState == SkeletonTrackingState.PositionOnly)
+                        {
+                            playerCenterPoint = SkeletonPointToScreen(skel.Position);
+                        }
+                    }
+                }
+
+            }
+
+            if (colorReceived == true)
+            {
+
+                for (int x = 0; x < colorPixels.Length; x++)
+                {
+                    // setzt alle Pixel auf dunkelgrau statt dem Kamerabild
+                    colorPixels[x] = (byte)50;
+                }
+
+                int centerPointPixel = ((int)playerCenterPoint.X + ((int)playerCenterPoint.Y * depthWidth));
+
+                //Console.WriteLine("Länge colorPixels: " + colorPixels.Length);
+                //Console.WriteLine("PlayerCenterPoint.X: " + playerCenterPoint.X);
+                //Console.WriteLine("PlayerCenterPoint.Y: " + playerCenterPoint.Y);
+                //Console.WriteLine("CenterPointPixel: " + centerPointPixel);
+                //Console.WriteLine("------");
+
+                using (DrawingContext dc = drawingGroup.Open()) 
+                {
+                     
+                    dc.DrawRectangle(Brushes.Black, null, new Rect(0.0, 0.0, 640.0, 480.0));
+
+                    dc.DrawEllipse(centerPointColor,
+                                    null,
+                                    playerCenterPoint,
+                                    10,
+                                    10);                
+                }
+
+                //drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, 640.0, 480.0));
+
+                    colorBitmap.WritePixels(
+                        new Int32Rect(0, 0, colorBitmap.PixelWidth, colorBitmap.PixelHeight),
+                        colorPixels,
+                        colorBitmap.PixelWidth * sizeof(int),
+                        0);
+
+                if (null == playerOpacityMaskImage)
+                {
+                    playerOpacityMaskImage = new WriteableBitmap(depthWidth,
+                                                                    depthHeight,
+                                                                    96,
+                                                                    96,
+                                                                    PixelFormats.Bgra32,
+                                                                    null);
+
+                    MyImage.OpacityMask = new ImageBrush(playerOpacityMaskImage);
+                }
+
+                playerOpacityMaskImage.WritePixels(
+                    new Int32Rect(0, 0, depthWidth, depthHeight),
+                    greenScreenPixelData,
+                    depthWidth * ((playerOpacityMaskImage.Format.BitsPerPixel + 7) / 8),
+                    0);
+            }
+        }
+
+        private Point SkeletonPointToScreen(SkeletonPoint skeletonPoint)
+        {
+            DepthImagePoint depthPoint = sensor.CoordinateMapper.MapSkeletonPointToDepthPoint(skeletonPoint, DepthImageFormat.Resolution640x480Fps30);
+            return new Point(depthPoint.X, depthPoint.Y);
         }
     }
 }
