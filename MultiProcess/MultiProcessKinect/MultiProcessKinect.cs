@@ -1,26 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
-using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Kinect;
-using System.Xml.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using Microsoft.Kinect;
 
 namespace MultiProcessKinect
 {
     static class MultiProcessKinect
     {
-        public static int testValue = 2;
         private static Mutex mutex;
         private static MemoryMappedFile file;
         private static MemoryMappedViewAccessor writer;
+        private static KinectSensor sensor;
+        private static Skeleton skeleton;
+        private static Skeleton[] skeletons;
 
         static void Main(string[] args)
         {
+            
             try
             {
                 mutex = Mutex.OpenExisting("mappedfilemutex");
@@ -30,50 +29,36 @@ namespace MultiProcessKinect
 
             try
             {
-                file = MemoryMappedFile.OpenExisting("SkeletonExchange");
+                String processID = args[0];
+                String kinectID = args[1];
+
+                file = MemoryMappedFile.OpenExisting("SkeletonExchange+processID");
                 writer = file.CreateViewAccessor();
-                int[] randomNumbers = new int[8];
-                String[] serializedSkeletons = new String[1];
 
-
-                var rndGenerator = new Random();
-                // zum Debuggen wird der Prozess mit einer Zufallszahl versehen, die er sendet
-                var processID = rndGenerator.Next(1000);
-                Skeleton skel = new Skeleton();
-
-                skel.TrackingState = SkeletonTrackingState.PositionOnly;
-                SkeletonPoint testPkt = new SkeletonPoint();
-                testPkt.X = 10;
-                testPkt.Y = 20;
-                testPkt.Z = 30;
-                skel.Position = testPkt;
-                serializedSkeletons[0] = SerializeObject<Skeleton>(skel);
-
-                while (true)
+                foreach (var potentialSensor in KinectSensor.KinectSensors)
                 {
-                    
-                    for (int x = 0; x < randomNumbers.Length; x++)
-                    {   
-                        //randomNumbers[x] = (int)(rndGenerator.Next(10));
-                        randomNumbers[x] = (int)processID;
+                    if (potentialSensor.UniqueKinectId == kinectID && potentialSensor.Status == KinectStatus.Connected)
+                    {
+                        sensor = potentialSensor;
+                        break;
                     }
+                }
+
+                if (sensor != null)
+                {
+                    sensor.SkeletonStream.Enable();
+                    sensor.SkeletonFrameReady += SensorSkeletonFrameReady;
 
                     try
                     {
-                        mutex.WaitOne();
-                        writeStringToMemoryMappedFile(SerializeBase64(skel), writer);
-                        //writer.WriteArray(0, serializedSkeletons, 0, serializedSkeletons.Length);
-                        //writer.WriteArray(0, randomNumbers, 0, randomNumbers.Length);
-                        
-                        mutex.ReleaseMutex();
-                        Thread.Sleep(200);
+                        sensor.Start();
                     }
-                    catch (Exception ex)
+                    catch (IOException)
                     {
-                        mutex.ReleaseMutex();
+                        sensor = null;
                     }
-
                 }
+      
             }
             catch (FileNotFoundException e)
             {
@@ -82,66 +67,46 @@ namespace MultiProcessKinect
   
         }
 
-        /*    private void SensorSkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
-            {
-
-                //SerializedSkeleton[] skeletons = new SerializedSkeleton[6];
-
-                using (SkeletonFrame skeletonFrame = e.OpenSkeletonFrame())
-                {
-                    mutex.WaitOne();
-                    writer.WriteArray(0, skeletons, 0, skeletons.Length);
-                    mutex.ReleaseMutex();
-                }
-            }*/
-
-        public static string SerializeObject<T>(this T toSerialize)
+        private static void SensorSkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
         {
-            //try
-            //{
-                XmlSerializer xmlSerializer = new XmlSerializer(toSerialize.GetType());
-                StringWriter textWriter = new StringWriter();
-
-                xmlSerializer.Serialize(textWriter, toSerialize);
-                return textWriter.ToString();
-            //}
-            //catch (Exception e)
-            //{
-            //    Console.WriteLine(e.ToString());
-            //    return "";
-            //}
-
-        }
-
-        public static string SerializeBase64(object o)
-        {
-            // Serialize to a base 64 string
-            byte[] bytes;
-            long length = 0;
-            MemoryStream ws = new MemoryStream();
-            BinaryFormatter sf = new BinaryFormatter();
-            sf.Serialize(ws, o);
-            length = ws.Length;
-            bytes = ws.GetBuffer();
-            string encodedData = bytes.Length + ":" + Convert.ToBase64String(bytes, 0, bytes.Length, Base64FormattingOptions.None);
-            return encodedData;
-        }
-
-        public static void writeStringToMemoryMappedFile(String stringToWrite, MemoryMappedViewAccessor accessor)
-        {
-            try
-            {
-                ASCIIEncoding encoding = new ASCIIEncoding();
-                byte[] Buffer = encoding.GetBytes(stringToWrite);
-                accessor.Write(54, (ushort)Buffer.Length);
-                accessor.WriteArray(54 + 2, Buffer, 0, Buffer.Length);
-            }
-            catch (Exception e)
-            {
-
-            }
             
+            skeleton = new Skeleton();
 
+            using (SkeletonFrame skeletonFrame = e.OpenSkeletonFrame())
+            {
+                if (skeletonFrame != null)
+                {
+                    skeletons = new Skeleton[skeletonFrame.SkeletonArrayLength];
+                    skeletonFrame.CopySkeletonDataTo(skeletons);
+                    skeleton = skeletons[0];
+
+                    try
+                    {  
+                        mutex.WaitOne();
+                        byte[] toSend = ObjectToByteArray(skeleton);
+                        writer.WriteArray<byte>(0, toSend, 0, toSend.Length);
+                        mutex.ReleaseMutex();
+                    }
+                    catch (Exception ex)
+                    {
+                        mutex.ReleaseMutex();
+                        Console.WriteLine("Fehler in beim Schreiben in MMF: " + ex.ToString());
+                    }
+                    Thread.Sleep(50);
+                }
+
+            }
         }
+
+        private static byte[] ObjectToByteArray(Object obj)
+        {
+            if (obj == null)
+                return null;
+            BinaryFormatter bf = new BinaryFormatter();
+            MemoryStream ms = new MemoryStream();
+            bf.Serialize(ms, obj);
+            return ms.ToArray();
+        }
+
     } 
 }

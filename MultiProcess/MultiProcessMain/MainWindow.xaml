@@ -6,6 +6,6 @@
         Closing="Window_Closing_1">
     
     <Grid>
-        
+        <Image x:Name="MyImage" />
     </Grid>
 </Window>
