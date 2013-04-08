@@ -17,9 +17,9 @@ namespace MultiProcessMain
     {
         private bool runningGameThread = false;
 
-        public static List<KinectSensor> sensors;
+        public static List<KinectSensor> sensors; // alle angeschlossenen Sensoren
         List<Process> processes; // Prozesse der Kinect-Konsolenanwendung
-        static long MemoryMappedFileCapacitySkeleton = 2255; //10MB in Byte
+        static long MemoryMappedFileCapacitySkeleton = 2255; // so gross ist die MMF in Byte
         // Mutual Exclusion verhinder gleichzeitig Zugriff der Prozesse auf zu lesende Daten
         static Mutex mutex; 
         // enthaelt zu lesende Daten, die die Prozesse generieren
@@ -46,8 +46,9 @@ namespace MultiProcessMain
 
         private void Window_Loaded_1(object sender, RoutedEventArgs e)
         {
+            // Zeug initialisieren:
+            processes = new List<Process>();
             sensors = new List<KinectSensor>();
-            
             drawingGroup = new DrawingGroup();
             imageSource = new DrawingImage(drawingGroup);
             MyImage.Source = imageSource;
@@ -56,11 +57,9 @@ namespace MultiProcessMain
             {
                 if (potentialSensor.Status == KinectStatus.Connected)
                 {
-                    sensors.Add(potentialSensor);
+                    sensors.Add(potentialSensor); 
                 }
             }
-            
-            processes = new List<Process>();
             
             // erzeugt und Startet Thread fuer Behandlung von Daten der Konsolenanwendungen
             var mappedfileThread = new Thread(this.MemoryMapData);
@@ -76,11 +75,14 @@ namespace MultiProcessMain
             object receivedObj;
             MemoryMappedViewAccessor accessor;
 
-            files = new MemoryMappedFile[sensors.Count];
-            Mutex mutex = new Mutex(true, "mappedfilemutex");
-            mutex.ReleaseMutex(); //Freigabe gleich zu Beginn
+            files = new MemoryMappedFile[sensors.Count]; // es werden so viele MMFs wie angeschlossene Kinects erstellt
+            try
+            {
+                Mutex mutex = new Mutex(true, "mappedfilemutex");
+                mutex.ReleaseMutex(); //Freigabe gleich zu Beginn
+            }
+            catch (Exception e) {}
 
-            ArrayList processes = new ArrayList();
             for (int i = 0; i < sensors.Count; i++) // startet 2 Prozesse (TODO: durch Anzahl Kinect-Sensoren ersetzen)
             {
                 files[i] = MemoryMappedFile.CreateNew("SkeletonExchange"+i, MemoryMappedFileCapacitySkeleton);
@@ -90,29 +92,30 @@ namespace MultiProcessMain
                 p.StartInfo.FileName = "C:\\Users\\Janko\\Documents\\Visual Studio 2012\\Projects\\MultiProcess\\MultiProcessKinect\\bin\\Debug\\MultiProcessKinect.exe"; // die exe im bin-ordner von der Konsolenapplikation (TODO: durch relativen Pfad ersetzen)
 
                 p.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-                p.StartInfo.Arguments = i + " " + sensors[i].UniqueKinectId;
-
+                p.StartInfo.Arguments = ""+i + " " + sensors[i].UniqueKinectId;
                 p.Start();
+
                 processes.Add(p); // zu Liste der Prozesse hinzufuegen
             }
 
                     while (this.runningGameThread)
                     {
-                        foreach (var file in files)
+                        foreach (var file in files) // fuer alle MMFs / Kinects
                         {
                             try
                             {
                                 mutex = Mutex.OpenExisting("mappedfilemutex");
                                 mutex.WaitOne(); // sichert alleinigen Zugriff
 
-                                Console.WriteLine("Test");
-                                receivedBytes = new byte[SkeletonObjektByteLength];
-                                accessor = file.CreateViewAccessor();
-                                accessor.ReadArray<byte>(0, receivedBytes, 0, receivedBytes.Length);
-                                receivedObj = ByteArrayToObject(receivedBytes);
+                                receivedBytes = new byte[SkeletonObjektByteLength]; // Byte-Array mit Laenge von serialized Skeleton
+                                accessor = file.CreateViewAccessor(); // Reader fuer aktuelle MMF
+                                accessor.ReadArray<byte>(0, receivedBytes, 0, receivedBytes.Length); // liest Nachricht von Konsolenanwendung
+                                receivedObj = ByteArrayToObject(receivedBytes); // wandelt sie in Object oder null um
                                 if (receivedObj != null)
                                 {
-                                    Skeleton receivedSkel = (Skeleton)(receivedObj);
+                                    Skeleton receivedSkel = (Skeleton)(receivedObj); // Tadaa: hier ist das Skeleton
+
+                                    // Testausgaben
                                     Console.WriteLine("Tracking ID:   " + receivedSkel.TrackingId);
                                     Console.WriteLine("Hash-Code:   " + receivedSkel.GetHashCode());
                                     Console.WriteLine("Tracking State:   "+ receivedSkel.TrackingState);
@@ -137,62 +140,29 @@ namespace MultiProcessMain
                                 }
                             }
 
-                            Thread.Sleep(50); // wartet 50 ms                     
+                            Thread.Sleep(100); // wartet 100 ms                     
                         }  
                     }
 
         }
 
-        private String getStringFromMemoryMappedFile(MemoryMappedViewAccessor accessor)
-        {
-            ushort Size = accessor.ReadUInt16(54);
-            byte[] Buffer = new byte[Size];
-            accessor.ReadArray(54 + 2, Buffer, 0, Buffer.Length);
-            return ASCIIEncoding.ASCII.GetString(Buffer);
-        }
-
+        // deserialisiert byte-Array in Object
         public static object ByteArrayToObject(byte[] _ByteArray)
         {
             try
             {
                 MemoryStream ms = new MemoryStream(_ByteArray);
                 BinaryFormatter bf = new BinaryFormatter();
-                ms.Position = 0;
+                ms.Position = 0; 
                 return bf.Deserialize(ms);
             }
             catch (Exception _Exception)
             {
-                // Error
-                Console.WriteLine("Exception caught in process: {0}", _Exception.ToString());
+
             }
 
             // Error occured, return null
             return null;
-        }
-
-        public static object DeserializeBase64(string s)
-        {
-            try
-            {
-                // We need to know the exact length of the string - Base64 can sometimes pad us by a byte or two
-                int p = s.IndexOf(':');
-                Console.WriteLine("Position von Doppelpunkt:" + p);
-                int length = Convert.ToInt32(s.Substring(0, p));
-
-                // Extract data from the base 64 string!
-                byte[] memorydata = Convert.FromBase64String(s.Substring(p + 1));
-                MemoryStream rs = new MemoryStream(memorydata, 0, length);
-                BinaryFormatter sf = new BinaryFormatter();
-                object o = sf.Deserialize(rs);
-                return o;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-                return null;
-            }
-
-            
         }
 
         private void Window_Closing_1(object sender, System.ComponentModel.CancelEventArgs e)
