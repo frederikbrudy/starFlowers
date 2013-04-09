@@ -6,17 +6,24 @@ using System.Threading;
 using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.Kinect;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace MultiProcessKinect
 {
     static class MultiProcessKinect
     {
+        private const DepthImageFormat DepthFormat = DepthImageFormat.Resolution640x480Fps30;
+        private const ColorImageFormat ColorFormat = ColorImageFormat.RgbResolution640x480Fps30;        
+        
         private static Mutex mutex;
-        private static MemoryMappedFile file;
-        private static MemoryMappedViewAccessor writer;
+        private static MemoryMappedFile skeletonFile, depthFile, colorFile;
+        private static MemoryMappedViewAccessor skeletonWriter, depthWriter, colorWriter;
         private static KinectSensor sensor;
         private static Skeleton skeleton;
         private static Skeleton[] skeletons;
+
+        private static byte[] colorPixels;
+        private static DepthImagePixel[] depthPixels;
 
         static void Main(string[] args)
         {
@@ -33,8 +40,14 @@ namespace MultiProcessKinect
             try
             {
                 // Jeder Prozess hat eigene MMF fuer Skeleton-Austausch
-                file = MemoryMappedFile.OpenExisting("SkeletonExchange"+processID);
-                writer = file.CreateViewAccessor();
+                skeletonFile = MemoryMappedFile.OpenExisting("SkeletonExchange" + processID);
+                skeletonWriter = skeletonFile.CreateViewAccessor();
+
+                depthFile = MemoryMappedFile.OpenExisting("DepthExchange" + processID);
+                depthWriter = depthFile.CreateViewAccessor();
+
+                colorFile = MemoryMappedFile.OpenExisting("ColorExchange" + processID);
+                colorWriter = colorFile.CreateViewAccessor();
 
                 sensor = null;
 
@@ -50,8 +63,15 @@ namespace MultiProcessKinect
 
                 if (sensor != null)
                 {
+                    sensor.DepthStream.Enable(DepthFormat);
+                    sensor.ColorStream.Enable(ColorFormat);
                     sensor.SkeletonStream.Enable();
-                    sensor.SkeletonFrameReady += SensorSkeletonFrameReady;
+
+                    depthPixels = new DepthImagePixel[sensor.DepthStream.FramePixelDataLength];
+                    colorPixels = new byte[sensor.ColorStream.FramePixelDataLength];
+
+                    sensor.AllFramesReady += SensorAllFramesReady;
+
                     try
                     {
                         sensor.Start();
@@ -77,9 +97,53 @@ namespace MultiProcessKinect
   
         }
 
-        private static void SensorSkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
+        private static void SensorAllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
-            
+            using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
+            {
+                if (null != depthFrame)
+                {
+                    Console.WriteLine("MIN-DEPTH" + depthFrame.MinDepth);
+                    Console.WriteLine("MAX-DEPTH" + depthFrame.MaxDepth);
+                    depthFrame.CopyDepthImagePixelDataTo(depthPixels);
+                    try
+                    {
+                        mutex = Mutex.OpenExisting("mappedfilemutex");
+                        mutex.WaitOne(); // blockt den Zugriff
+                        //Console.WriteLine("depthPixels.Length: " + depthPixels.Length);
+                        //Console.WriteLine("Laenge eines DepthPixels in byte: " + Marshal.SizeOf(typeof(DepthImagePixel)));
+                        depthWriter.WriteArray<DepthImagePixel>(0, depthPixels, 0, depthPixels.Length); // schickt es weg                        
+
+                        mutex.ReleaseMutex(); // gibt den Zugriff frei
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Fehler in beim Schreiben in Depth-MMF: " + ex.ToString());
+                    }
+                }
+            }
+
+            using (ColorImageFrame colorFrame = e.OpenColorImageFrame())
+            {
+                if (null != colorFrame)
+                {
+                    colorFrame.CopyPixelDataTo(colorPixels);
+
+                    try
+                    {
+                        mutex = Mutex.OpenExisting("mappedfilemutex");
+                        mutex.WaitOne(); // blockt den Zugriff
+                        colorWriter.WriteArray<byte>(0, colorPixels, 0, colorPixels.Length); // schickt es weg
+                        mutex.ReleaseMutex(); // gibt den Zugriff frei
+                    }
+                    catch (Exception ex)
+                    {
+                        mutex.ReleaseMutex(); // gibt den Zugriff frei
+                        Console.WriteLine("Fehler in beim Schreiben in Color-MMF: " + ex.ToString());
+                    }
+                }
+            }  
+
             using (SkeletonFrame skeletonFrame = e.OpenSkeletonFrame())
             {
                 if (skeletonFrame != null)
@@ -115,7 +179,7 @@ namespace MultiProcessKinect
                             }
                         }
                         mutex.WaitOne(); // blockt den Zugriff
-                        writer.WriteArray<byte>(0, toSend, 0, toSend.Length); // schickt es weg
+                        skeletonWriter.WriteArray<byte>(0, toSend, 0, toSend.Length); // schickt es weg
                         mutex.ReleaseMutex(); // gibt den Zugriff frei
                     }
                     catch (Exception ex)
@@ -123,7 +187,7 @@ namespace MultiProcessKinect
                         mutex.ReleaseMutex();
                         Console.WriteLine("Fehler in beim Schreiben in MMF: " + ex.ToString());
                     }
-                    Thread.Sleep(50); // wartet 50 ms (TODO: in korrekte Zeit aendern)
+                    Thread.Sleep(15); // wartet 50 ms (TODO: in korrekte Zeit aendern)
                 }
 
             }
