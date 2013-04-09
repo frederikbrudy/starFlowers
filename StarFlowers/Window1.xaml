@@ -1,0 +1,40 @@
+﻿<Window x:Class="StarFlowers.Window1"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Sprite Test" Height="480" Width="3000" KeyDown="keydown" Loaded="WindowLoaded"
+        Background="Black" WindowState="Normal" WindowStyle="None">
+    <Grid Name="MainGrid">
+        <!--<Grid.Effect>
+            <BlurEffect></BlurEffect>
+        </Grid.Effect>-->
+        <!--<Image Source="Images/lmu_muenchen_logo.png"></Image>-->
+        <!--<Rectangle x:Name="imgRect">
+            <Rectangle.Fill>
+                <ImageBrush x:Name="imgBrush" ImageSource="walking_spritesheet.png" Stretch="None" AlignmentX="Left" AlignmentY="Top" />
+            </Rectangle.Fill>
+        </Rectangle>-->
+        <Image Name="sprite0" Width="640" Height="480" 
+               HorizontalAlignment="Left" VerticalAlignment="Top" 
+               >
+        </Image>
+        <Image Name="sprite1" Width="640" Height="480" 
+               HorizontalAlignment="Left" VerticalAlignment="Top" 
+               >
+        </Image>
+        <Image Name="sprite2" Width="640" Height="480" 
+               HorizontalAlignment="Left" VerticalAlignment="Top" 
+               >
+        </Image>
+        <Image Name="sprite3" Width="640" Height="480" 
+               HorizontalAlignment="Left" VerticalAlignment="Top" 
+               >
+        </Image>
+        <Image Name="sprite4" Width="640" Height="480" 
+               HorizontalAlignment="Left" VerticalAlignment="Top" 
+               >
+        </Image>
+        <!--<Image Name="sprite1" Width="640" Height="480" Margin="640,0,1712,-8"></Image>
+        <Image Name="sprite2" Width="640" Height="480" Margin="1176,0,1176,-8"></Image>
+        <Image Name="sprite3" Width="640" Height="480" Margin="1816,0,536,-8"></Image>-->
+    </Grid>
+</Window>
