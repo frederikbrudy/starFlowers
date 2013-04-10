@@ -89,10 +89,6 @@ namespace MultiProcessKinect
 
             while (true) /// Endlosschleife, damit der Prozess offen bleibt
             {
-                //Console.WriteLine((sensor != null));
-                //Console.WriteLine(processID);
-                //Console.WriteLine(kinectID);
-                //Thread.Sleep(30);
             }
   
         }
@@ -103,8 +99,6 @@ namespace MultiProcessKinect
             {
                 if (null != depthFrame)
                 {
-                    Console.WriteLine("MIN-DEPTH" + depthFrame.MinDepth);
-                    Console.WriteLine("MAX-DEPTH" + depthFrame.MaxDepth);
                     depthFrame.CopyDepthImagePixelDataTo(depthPixels);
                     try
                     {
@@ -187,7 +181,7 @@ namespace MultiProcessKinect
                         mutex.ReleaseMutex();
                         Console.WriteLine("Fehler in beim Schreiben in MMF: " + ex.ToString());
                     }
-                    Thread.Sleep(15); // wartet 50 ms (TODO: in korrekte Zeit aendern)
+                    Thread.Sleep(15);
                 }
 
             }

@@ -125,6 +125,8 @@ namespace MultiProcessMain
 
             while (this.runningGameThread)
             {
+                DateTime before = DateTime.Now;
+                
                 for (int x = 0; x < sensors.Count; x++) // fuer alle Kinects:
                 {
                     // ------------- Skeleton holen ------------------                            
@@ -232,7 +234,7 @@ namespace MultiProcessMain
                         }
                     }
 
-                    Thread.Sleep(30); // wartet 100 ms                     
+                    Thread.Sleep(20); // wartet 100 ms                     
                 }  
             }
 
