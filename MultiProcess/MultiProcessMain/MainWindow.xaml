@@ -17,6 +17,6 @@
         <Image x:Name="LeftImage" Grid.Row="0" Grid.Column="0" />
         <Image x:Name="RightImage" Grid.Row="0" Grid.Column="1" />
         <Image x:Name="LeftDepthStream" Grid.Row="1" Grid.Column="0" />
-        <Image x:Name="RightDepthStream" Grid.Row="1" Grid.Column="1" />        
+        <Image x:Name="RightDepthStream" Grid.Row="0" Grid.Column="0" />
     </Grid>
 </Window>

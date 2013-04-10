@@ -13,7 +13,7 @@ namespace MultiProcessKinect
     static class MultiProcessKinect
     {
         private const DepthImageFormat DepthFormat = DepthImageFormat.Resolution640x480Fps30;
-        private const ColorImageFormat ColorFormat = ColorImageFormat.RgbResolution640x480Fps30;        
+        private const ColorImageFormat ColorFormat = ColorImageFormat.RgbResolution640x480Fps30;      
         
         private static Mutex mutex;
         private static MemoryMappedFile skeletonFile, depthFile, colorFile;
