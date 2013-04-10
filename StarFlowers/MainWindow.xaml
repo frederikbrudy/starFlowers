@@ -1,17 +1,21 @@
 ﻿<Window x:Class="StarFlowers.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="768" Width="1366" 
+        Title="MainWindow" Height="480" Width="853" 
         Background="Black" WindowState="Normal" WindowStyle="None"
         Loaded="WindowLoaded" Closing="WindowClosing" KeyDown="key_down"
         SizeChanged="WindowSizeChanged" MouseMove="mouse_move"
         Cursor="None">
-    <Grid>
+    <Grid Name="Grid">
+        <!--<Grid.LayoutTransform>
+            <ScaleTransform ScaleX="0.375" ></ScaleTransform>
+        </Grid.LayoutTransform>-->
+        
         <Image x:Name="MyImage" />
         <Image x:Name="OverlayImage" Opacity="0.5" />
-        <Viewport3D Name="World" Width="1366" Height="768">
+        <Viewport3D Name="World" Width="3412" Height="768"> <!-- 1706 1366-->
             <Viewport3D.Camera>
-                <OrthographicCamera Position="0,0,1" LookDirection="0,0,-1" UpDirection="0,1,0" Width="1366" />
+                <OrthographicCamera Position="0,0,1" LookDirection="0,0,-1" UpDirection="0,1,0" Width="3412" /><!--1706 1366-->
             </Viewport3D.Camera>
 
             <Viewport3D.Children>

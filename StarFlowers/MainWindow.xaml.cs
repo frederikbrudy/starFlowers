@@ -143,16 +143,26 @@ namespace StarFlowers
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            //make window as big as possible, not covering the task bar
-            Rect size = System.Windows.SystemParameters.WorkArea;
-            this.Width = size.Width;
-            this.Height = size.Height;
-            this.Left = size.Left;
-            this.Top = size.Top;
             this.WindowStyle = WindowStyle.None;
             this.WindowState = WindowState.Maximized;
             this.Background = Brushes.Black;
             this.Cursor = System.Windows.Input.Cursors.None;
+
+            Rect size = System.Windows.SystemParameters.WorkArea; //size of the display, minus the task bar
+            double primaryWidth = System.Windows.SystemParameters.FullPrimaryScreenWidth;
+            double desiredWidth = primaryWidth;
+            desiredWidth = 3412; //1706
+            //this.Width = size.Width;
+            //this.Height = size.Height;
+            this.Width = desiredWidth;
+            this.Height = 480;
+            this.Left = size.Left;
+            this.Top = size.Top;
+            
+            double scaleFactor = 1 / (desiredWidth / primaryWidth);
+            this.Grid.LayoutTransform = new ScaleTransform(scaleFactor, 1);
+            Console.WriteLine("primaryWidth: " + primaryWidth + ", desiredWidth: " + desiredWidth
+                + ", this.Width: " + this.Width + ", scaleFactor: " + scaleFactor + ", this.ActualWidth: " + this.ActualWidth);
 
             this.initParticleSystem();
             this.initDrawingData();
