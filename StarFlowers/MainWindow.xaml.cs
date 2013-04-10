@@ -85,15 +85,7 @@ namespace StarFlowers
 
         private Random rand;
 
-        private const double particleSizeMultiplier = 10.0;
-        private const double particleLifeMultiplier = 5.0;
-
-        private Point mousePosition;
-
-        /// <summary>
-        /// Brush used to draw mouse point
-        /// </summary>
-        //private Brush MouseBrush = Brushes.Blue;
+        
 
         /// <summary>
         /// Thickness of body center ellipse
@@ -108,6 +100,8 @@ namespace StarFlowers
         private DrawingImage imageSourceMouse;
 
         private const int maxParticleCountPerSystem = 500;
+        private const double particleSizeMultiplier = 10.0;
+        private const double particleLifeMultiplier = 5.0;
 
         private List<Point3D>[] rightHandPoints = new List<Point3D>[2];
         private List<Point3D>[] leftHandPoints = new List<Point3D>[2];
@@ -118,8 +112,8 @@ namespace StarFlowers
         private Point playerCenterPoint; // Mittelpunkt des Shapes von einem Player
         Point rightHandPoint = new Point();
         Point leftHandPoint = new Point();
-        Point handCenterPoint = new Point();
-        private double HandCenterThickness = 10;
+        //Point handCenterPoint = new Point();
+        //private double HandCenterThickness = 10;
 
         private Color colorLeftHand = Colors.Orchid;
         private Color colorRightHand = Colors.Blue;
@@ -217,8 +211,7 @@ namespace StarFlowers
 
         private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            Console.WriteLine(this.ActualWidth);
-            Console.WriteLine(this.ActualHeight);
+
         }
 
         private void key_down(object sender, KeyEventArgs e)
@@ -370,6 +363,7 @@ namespace StarFlowers
             }
 
             pm.Update((float)elapsed);
+            /*
             foreach (KeyValuePair<Color, Point3D> sp in this.spawnPoints)
             {
                 // do something with entry.Value or entry.Key
@@ -381,48 +375,21 @@ namespace StarFlowers
                     }
                 }
             }
+            */
 
             //setting spawn points
             //for (int screenCounter = 0; screenCounter < 1; screenCounter++)
             //{ //TODO
             for(int screenCounter = 0; screenCounter < 1; screenCounter++){
-                //foreach (Point3D point in this.playerCenterPoints[screenCounter])
-                //{
-                //    //spawn the points
-                //    if (point.X > 0.01 || point.X < -0.01)
-                //    {
-                //        ////only for body center
-                //        //if (sp.Key != this.colorBodyCenter || (sp.Key == this.colorBodyCenter && !this.trackingSkeleton))
-                //        //{
-                //            pm.SpawnParticle(point, 10.0, this.colorBodyCenter, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-                //        //}
-
-                //    }
-                //}
-
-
-
                 if (!this.trackingSkeleton)
                 {
+                    //not tracking skel. should spawn at body center
                     this.spawnThosePoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
                 }
                 this.spawnThosePoints(this.rightHandPoints[screenCounter], this.colorRightHand);
                 this.spawnThosePoints(this.leftHandPoints[screenCounter], this.colorLeftHand);
                 this.spawnThosePoints(this.handCenterPoints[screenCounter], this.colorHandCenterPoint);
-
-                //foreach (KeyValuePair<Color, Point3D> sp in this.spawnPoints)
-                //{
-                //    //spawn the points
-                //    if (sp.Value.X > 0.01 || sp.Value.X < -0.01)
-                //    {
-                //        if (sp.Key != this.colorBodyCenter || (sp.Key == this.colorBodyCenter && !this.trackingSkeleton))
-                //        {
-                //            pm.SpawnParticle(sp.Value, 10.0, sp.Key, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
-                //        }
-                //    }
-                //}
             }
-
         }
 
         private void spawnThosePoints(List<Point3D> list, Color color)
@@ -598,7 +565,7 @@ namespace StarFlowers
                             {
                                 rightHandPoint = SkeletonPointToScreen(rightHand.Position);
                                 this.rightHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint)));
-                                this.spawnPoints[this.colorRightHand] = pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint));
+                                //this.spawnPoints[this.colorRightHand] = pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint));
                             }
 
                             if (leftHand.TrackingState == JointTrackingState.Tracked
@@ -606,32 +573,34 @@ namespace StarFlowers
                             {
                                 leftHandPoint = SkeletonPointToScreen(leftHand.Position);
                                 this.leftHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint)));
-                                this.spawnPoints[this.colorLeftHand] = pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint));
+                                //this.spawnPoints[this.colorLeftHand] = pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint));
                                 
+                            }
+
+                            if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.Height * 0.9)
+                            {
+                                Console.WriteLine("seeding for right hand on skel " + screenCounter);
+                            }
+
+                            if (leftHandPoint != null && this.stretchDepthPointToScreen(leftHandPoint).Y > this.Height * 0.9)
+                            {
+                                Console.WriteLine("seeding for left hand on skel " + screenCounter);
                             }
 
                             if (leftHandPoint != null && rightHandPoint != null)
                             {
-                                handCenterPoint.X = leftHandPoint.X + Math.Abs(rightHandPoint.X - leftHandPoint.X) / 2;
-                                handCenterPoint.Y = leftHandPoint.Y + Math.Abs(rightHandPoint.Y - leftHandPoint.Y) / 2;
-                                handCenterPoint.X = (rightHandPoint.X + leftHandPoint.X) / 2;
-                                handCenterPoint.Y = (rightHandPoint.Y + leftHandPoint.Y) / 2;
+                                Point handCenterPoint = new Point((rightHandPoint.X + leftHandPoint.X) / 2, (rightHandPoint.Y + leftHandPoint.Y) / 2);
 
                                 double distance = Math.Sqrt(Math.Pow(rightHandPoint.X - leftHandPoint.X, 2) + Math.Pow(rightHandPoint.Y - leftHandPoint.Y, 2));
-                                this.HandCenterThickness = distance / 8;
+                                //this.HandCenterThickness = distance / 8;
                                 this.handCenterThicknesses[screenCounter] = distance / 8;
                                 this.handCenterPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint)));
-                                this.spawnPoints[this.colorHandCenterPoint] = pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint));
+                                //this.spawnPoints[this.colorHandCenterPoint] = pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint));
                                 
                             }
                         }
                     }
-                    
                 }
-                
-                this.doFrameCalculation();
-                
-
             }
 
             if (colorReceived == true)
@@ -710,9 +679,11 @@ namespace StarFlowers
                 if (!this.trackingSkeleton)
                 {
                     this.playerCenterPoints[screenCounter].Add(this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint)));
-                    this.spawnPoints[this.colorBodyCenter] = this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint));
+                    //this.spawnPoints[this.colorBodyCenter] = this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint));
                 }
             }
+
+            this.doFrameCalculation();
         }
 
         private Point SkeletonPointToScreen(SkeletonPoint skeletonPoint)
