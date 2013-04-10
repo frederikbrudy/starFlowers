@@ -124,9 +124,11 @@ namespace MultiProcessMain
             }
 
             while (this.runningGameThread)
-            {
+            {   
                 for (int x = 0; x < sensors.Count; x++) // fuer alle Kinects:
                 {
+                    bool skeletonFound = false;
+                    
                     // ------------- Skeleton holen ------------------                            
                     try
                     {
@@ -140,7 +142,7 @@ namespace MultiProcessMain
                         receivedObj = ByteArrayToObject(receivedBytes); // wandelt sie in Object oder null um
                         if (receivedObj != null)
                         {
-                                    
+                            skeletonFound = true;        
                             Skeleton receivedSkel = (Skeleton)(receivedObj); // Tadaa: hier ist das Skeleton
 
                             // Testausgaben
@@ -168,71 +170,76 @@ namespace MultiProcessMain
                         }
                     }
 
-                    // ------------- DepthStream holen ------------------
-                    try
+                    if (!skeletonFound)
                     {
-                        mutex = Mutex.OpenExisting("mappedfilemutex");
-                        mutex.WaitOne();
-                        var receivedDepthPixels = new DepthImagePixel[307200];
-
-                        accessor = depthFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
-                        accessor.ReadArray<DepthImagePixel>(0, receivedDepthPixels, 0, receivedDepthPixels.Length); // liest Nachricht von Konsolenanwendung
-                        mutex.ReleaseMutex();
-
-                        int colorPixelIndex = 0;
-                        for (int i = 0; i < receivedDepthPixels.Length; ++i)
+                        // ------------- DepthStream holen ------------------
+                        try
                         {
-                            // Get the depth for this pixel
-                            short depth = receivedDepthPixels[i].Depth;
-                            byte intensity = (byte)(depth >= 800 && depth <= 4000 ? depth : 0);
-                            colorPixels[colorPixelIndex++] = intensity;
-                            colorPixels[colorPixelIndex++] = intensity;                   
-                            colorPixels[colorPixelIndex++] = intensity;
-                            ++colorPixelIndex;
+                            mutex = Mutex.OpenExisting("mappedfilemutex");
+                            mutex.WaitOne();
+                            var receivedDepthPixels = new DepthImagePixel[307200];
+
+                            accessor = depthFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
+                            accessor.ReadArray<DepthImagePixel>(0, receivedDepthPixels, 0, receivedDepthPixels.Length); // liest Nachricht von Konsolenanwendung
+                            mutex.ReleaseMutex();
+
+                            int colorPixelIndex = 0;
+                            for (int i = 0; i < receivedDepthPixels.Length; ++i)
+                            {
+                                // Get the depth for this pixel
+                                short depth = receivedDepthPixels[i].Depth;
+                                byte intensity = (byte)(depth >= 800 && depth <= 4000 ? depth : 0);
+                                colorPixels[colorPixelIndex++] = intensity;
+                                colorPixels[colorPixelIndex++] = intensity;
+                                colorPixels[colorPixelIndex++] = intensity;
+                                ++colorPixelIndex;
+                            }
+
+                            Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => DrawImage(x + 2, colorPixels)));
+
                         }
-
-                        Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => DrawImage(x + 2, colorPixels)));
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Fehler beim Holen des DepthStreams" + ex.ToString());
-                        //colorMutex.ReleaseMutex(); // gibt Mutex wieder frei
-                        mutex.ReleaseMutex(); // gibt Mutex wieder frei
-                        foreach (Process p in processes)
+                        catch (Exception ex)
                         {
-                            p.Kill(); // beendet alle Konsolenanwendungen
+                            Console.WriteLine("Fehler beim Holen des DepthStreams" + ex.ToString());
+                            //colorMutex.ReleaseMutex(); // gibt Mutex wieder frei
+                            mutex.ReleaseMutex(); // gibt Mutex wieder frei
+                            foreach (Process p in processes)
+                            {
+                                p.Kill(); // beendet alle Konsolenanwendungen
+                            }
                         }
                     }
 
                     // ------------- ColorStream holen ------------------
-
-                    try
-                    {   
-                        mutex = Mutex.OpenExisting("mappedfilemutex");                                
-                        mutex.WaitOne();
-                        receivedBytes = new byte[ColorAndDepthPixelArrayByteLength]; // Byte-Array mit Laenge von serialized Skeleton
-
-                        accessor = colorFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
-                        accessor.ReadArray<byte>(0, receivedBytes, 0, receivedBytes.Length); // liest Nachricht von Konsolenanwendung
-
-                        mutex.ReleaseMutex();
-
-                        Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => DrawImage(x, receivedBytes)));
-
-                    }
-                    catch (Exception ex)
+                    if (skeletonFound)
                     {
-                        Console.WriteLine("Fehler beim Zeichnen" + ex.ToString());
-                        //colorMutex.ReleaseMutex(); // gibt Mutex wieder frei
-                        mutex.ReleaseMutex(); // gibt Mutex wieder frei
-                        foreach (Process p in processes)
+                        try
                         {
-                            p.Kill(); // beendet alle Konsolenanwendungen
+                            mutex = Mutex.OpenExisting("mappedfilemutex");
+                            mutex.WaitOne();
+                            receivedBytes = new byte[ColorAndDepthPixelArrayByteLength]; // Byte-Array mit Laenge von serialized Skeleton
+
+                            accessor = colorFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
+                            accessor.ReadArray<byte>(0, receivedBytes, 0, receivedBytes.Length); // liest Nachricht von Konsolenanwendung
+
+                            mutex.ReleaseMutex();
+
+                            Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => DrawImage(x, receivedBytes)));
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Fehler beim Zeichnen" + ex.ToString());
+                            //colorMutex.ReleaseMutex(); // gibt Mutex wieder frei
+                            mutex.ReleaseMutex(); // gibt Mutex wieder frei
+                            foreach (Process p in processes)
+                            {
+                                p.Kill(); // beendet alle Konsolenanwendungen
+                            }
                         }
                     }
 
-                    Thread.Sleep(30); // wartet 100 ms                     
+                    Thread.Sleep(25); // wartet ein bisschen
                 }  
             }
 

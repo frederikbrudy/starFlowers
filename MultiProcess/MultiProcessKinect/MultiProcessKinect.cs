@@ -89,61 +89,15 @@ namespace MultiProcessKinect
 
             while (true) /// Endlosschleife, damit der Prozess offen bleibt
             {
-                //Console.WriteLine((sensor != null));
-                //Console.WriteLine(processID);
-                //Console.WriteLine(kinectID);
-                //Thread.Sleep(30);
+                Thread.Sleep(1000);
             }
   
         }
 
         private static void SensorAllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
-            using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
-            {
-                if (null != depthFrame)
-                {
-                    Console.WriteLine("MIN-DEPTH" + depthFrame.MinDepth);
-                    Console.WriteLine("MAX-DEPTH" + depthFrame.MaxDepth);
-                    depthFrame.CopyDepthImagePixelDataTo(depthPixels);
-                    try
-                    {
-                        mutex = Mutex.OpenExisting("mappedfilemutex");
-                        mutex.WaitOne(); // blockt den Zugriff
-                        //Console.WriteLine("depthPixels.Length: " + depthPixels.Length);
-                        //Console.WriteLine("Laenge eines DepthPixels in byte: " + Marshal.SizeOf(typeof(DepthImagePixel)));
-                        depthWriter.WriteArray<DepthImagePixel>(0, depthPixels, 0, depthPixels.Length); // schickt es weg                        
-
-                        mutex.ReleaseMutex(); // gibt den Zugriff frei
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Fehler in beim Schreiben in Depth-MMF: " + ex.ToString());
-                    }
-                }
-            }
-
-            using (ColorImageFrame colorFrame = e.OpenColorImageFrame())
-            {
-                if (null != colorFrame)
-                {
-                    colorFrame.CopyPixelDataTo(colorPixels);
-
-                    try
-                    {
-                        mutex = Mutex.OpenExisting("mappedfilemutex");
-                        mutex.WaitOne(); // blockt den Zugriff
-                        colorWriter.WriteArray<byte>(0, colorPixels, 0, colorPixels.Length); // schickt es weg
-                        mutex.ReleaseMutex(); // gibt den Zugriff frei
-                    }
-                    catch (Exception ex)
-                    {
-                        mutex.ReleaseMutex(); // gibt den Zugriff frei
-                        Console.WriteLine("Fehler in beim Schreiben in Color-MMF: " + ex.ToString());
-                    }
-                }
-            }  
-
+            bool skeletonFound = false;
+            
             using (SkeletonFrame skeletonFrame = e.OpenSkeletonFrame())
             {
                 if (skeletonFrame != null)
@@ -161,7 +115,6 @@ namespace MultiProcessKinect
                     }
                     // in skeletons sind nun nur noch Skeletons mit Status "tracked"
                     skeletons = trackedSkeletons.ToArray();
-                    
                     byte[] toSend = new byte[2255]; // 2255 byte ist die Laenge eines serialisierten Skeletons
 
                     try
@@ -170,10 +123,11 @@ namespace MultiProcessKinect
                         {
                             skeleton = skeletons[0]; // erstes Skelett nehmen...
                             toSend = ObjectToByteArray(skeleton); // ...und serialisieren
+                            skeletonFound = true;
                         }
                         else // wenn kein Skeleton getracked wurde, schickt er nur Nullen
                         {
-                            for (int i = 0; i < toSend.Length; i++ )
+                            for (int i = 0; i < toSend.Length; i++)
                             {
                                 toSend[i] = 0;
                             }
@@ -187,10 +141,57 @@ namespace MultiProcessKinect
                         mutex.ReleaseMutex();
                         Console.WriteLine("Fehler in beim Schreiben in MMF: " + ex.ToString());
                     }
-                    Thread.Sleep(15); // wartet 50 ms (TODO: in korrekte Zeit aendern)
                 }
 
             }
+
+            if (!skeletonFound)
+            {
+                using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
+                {
+                    if (null != depthFrame)
+                    {
+                        depthFrame.CopyDepthImagePixelDataTo(depthPixels);
+                        try
+                        {
+                            mutex = Mutex.OpenExisting("mappedfilemutex");
+                            mutex.WaitOne(); // blockt den Zugriff
+                            depthWriter.WriteArray<DepthImagePixel>(0, depthPixels, 0, depthPixels.Length); // schickt es weg                        
+                            mutex.ReleaseMutex(); // gibt den Zugriff frei
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Fehler in beim Schreiben in Depth-MMF: " + ex.ToString());
+                        }
+                    }
+                }
+            }
+
+            if (skeletonFound)
+            {
+                using (ColorImageFrame colorFrame = e.OpenColorImageFrame())
+                {
+                    if (null != colorFrame)
+                    {
+                        colorFrame.CopyPixelDataTo(colorPixels);
+
+                        try
+                        {
+                            mutex = Mutex.OpenExisting("mappedfilemutex");
+                            mutex.WaitOne(); // blockt den Zugriff
+                            colorWriter.WriteArray<byte>(0, colorPixels, 0, colorPixels.Length); // schickt es weg
+                            mutex.ReleaseMutex(); // gibt den Zugriff frei
+                        }
+                        catch (Exception ex)
+                        {
+                            mutex.ReleaseMutex(); // gibt den Zugriff frei
+                            Console.WriteLine("Fehler in beim Schreiben in Color-MMF: " + ex.ToString());
+                        }
+                    }
+                }  
+            }
+            Thread.Sleep(25);
+
         }
 
         // serialisiert Object in Byte-Array
