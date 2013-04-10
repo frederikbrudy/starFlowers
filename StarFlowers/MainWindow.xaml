@@ -35,7 +35,6 @@
         <Image Name="MouseImage"></Image>
         <!--<Image x:Name="LogoImage" Source="Images\lmu_muenchen_logo.png" Opacity="0.5" Width="400" Margin="948,278,10,-278" ></Image>-->
         
-        <Canvas x:Name="ParticleHost" />
-        
+        <!--<Canvas x:Name="ParticleHost" />-->
     </Grid>
 </Window>

@@ -47,7 +47,6 @@ namespace StarFlowers
 
         private int colorToDepthDivisor;
 
-        private Point playerCenterPoint; // Mittelpunkt des Shapes von einem Player
 
         
 
@@ -110,9 +109,13 @@ namespace StarFlowers
 
         private const int maxParticleCountPerSystem = 500;
 
-        private double currentWidth;
-        private double currentHeight;
+        private List<Point3D>[] rightHandPoints = new List<Point3D>[2];
+        private List<Point3D>[] leftHandPoints = new List<Point3D>[2];
+        private List<Point3D>[] handCenterPoints = new List<Point3D>[2];
+        private List<Point3D>[] playerCenterPoints = new List<Point3D>[2];
+        private double[] handCenterThicknesses = new double[2];
 
+        private Point playerCenterPoint; // Mittelpunkt des Shapes von einem Player
         Point rightHandPoint = new Point();
         Point leftHandPoint = new Point();
         Point handCenterPoint = new Point();
@@ -129,6 +132,9 @@ namespace StarFlowers
         private Brush brushBodyCenter;
         private Brush brushHandCenterPoint;
 
+        /// <summary>
+        /// brush for the center point of a tracked user
+        /// </summary>
         private Brush brushCenterPoint;
         private Color colorCenterPointTracked = Colors.Green;
         private Color colorCenterPointNotTracked = Colors.Red;
@@ -143,27 +149,26 @@ namespace StarFlowers
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            //this.WindowState = WindowState.Normal;
-            //this.Width = System.Windows.SystemParameters.PrimaryScreenWidth;
-            //this.Height = System.Windows.SystemParameters.PrimaryScreenHeight;
+            //make window as big as possible, not covering the task bar
             Rect size = System.Windows.SystemParameters.WorkArea;
             this.Width = size.Width;
             this.Height = size.Height;
             this.Left = size.Left;
             this.Top = size.Top;
-            this.initParticleSystem();
-            this.initDrawingData();
-            this.initBrushes();
             this.WindowStyle = WindowStyle.None;
             this.WindowState = WindowState.Maximized;
             this.Background = Brushes.Black;
             this.Cursor = System.Windows.Input.Cursors.None;
 
+            this.initParticleSystem();
+            this.initDrawingData();
+            this.initBrushes();
+
             drawingGroup = new DrawingGroup();
             imageSource = new DrawingImage(drawingGroup);
             OverlayImage.Source = imageSource;
 
-            this.saveCurrentSize();
+            //this.saveCurrentSize();
 
             // Look through all sensors and start the first connected one.
             foreach (var potentialSensor in KinectSensor.KinectSensors)
@@ -214,10 +219,6 @@ namespace StarFlowers
         {
             Console.WriteLine(this.ActualWidth);
             Console.WriteLine(this.ActualHeight);
-            //if (this.sensor != null)
-            //{
-            //    this.sensor.Stop();
-            //}
         }
 
         private void key_down(object sender, KeyEventArgs e)
@@ -246,17 +247,7 @@ namespace StarFlowers
 
         private void WindowSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            this.saveCurrentSize();
-        }
-
-        private void saveCurrentSize()
-        {
-            this.currentWidth = this.ActualWidth;
-            this.currentHeight = this.ActualHeight;
-            //Console.WriteLine("Width: " + this.Width + ", Height: " + this.Height);
-            //Console.WriteLine("ActualWidth: " + this.ActualWidth + ", ActualHeight: " + this.ActualHeight);
-            //this.rightHandPoint = new Point(this.currentWidth / 2, this.currentHeight / 2);
-            //this.leftHandPoint = new Point(this.currentWidth / 2, this.currentHeight / 2);
+            //this.saveCurrentSize();
         }
 
         private void mouse_move(object sender, MouseEventArgs e)
@@ -270,28 +261,31 @@ namespace StarFlowers
             this.spawnPoints[this.colorMousePoint] = this.pointTo3DPoint(newPoint2D);
         }
 
-        //private void setBodyCenterSpawnPoint2(Point newPoint2D)
-        //{
-            
-        //}
-
+        /// <summary>
+        /// converts a 2D point to its corresponding point in a 3D world
+        /// </summary>
+        /// <param name="point2D"></param>
+        /// <returns></returns>
         private Point3D pointTo3DPoint(Point point2D){
             return new Point3D(point2D.X - (this.Width / 2), (this.Height / 2) - point2D.Y, 0.0);
         }
 
+        /// <summary>
+        /// Strecht a Kinect’s Depth Point to your window’s size
+        /// </summary>
+        /// <param name="depthPoint"></param>
+        /// <returns></returns>
         private Point stretchDepthPointToScreen(Point depthPoint)
         {
             Point screenPoint = new Point();
-
-            screenPoint.X = depthPoint.X * this.currentWidth / 640.0;
-            screenPoint.Y = depthPoint.Y * this.currentHeight / 480.0;
-            //Console.WriteLine("depthPoint.X: " + depthPoint.X + ", depthPoint.Y: " + depthPoint.Y);
-            //Console.WriteLine("screenPoint.X: " + screenPoint.X + ", screenPoint.Y: " + screenPoint.Y);
-            //Console.WriteLine("currentWidth: " + currentWidth + ", currentHeight: " + currentHeight);
-
+            screenPoint.X = depthPoint.X * this.Width / 640.0;
+            screenPoint.Y = depthPoint.Y * this.Height / 480.0;
             return screenPoint;
         }
 
+        /// <summary>
+        /// initializes the various particle systems
+        /// </summary>
         private void initParticleSystem()
         {
             frameTimer = new System.Windows.Threading.DispatcherTimer();
@@ -300,14 +294,13 @@ namespace StarFlowers
             //frameTimer.Start();
 
             this.spawnPoints = new Dictionary<Color,Point3D>();
-            //this.spawnPoint = new Point3D(0.0, 0.0, 0.0);
             this.lastTick = Environment.TickCount;
 
             pm = new ParticleSystemManager();
 
-            //this.ParticleHost.Children.Add
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorBodyCenter));
             this.spawnPoints.Add(this.colorBodyCenter, new Point3D(0, 0, 0));
+
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorLeftHand));
             this.spawnPoints.Add(this.colorLeftHand, new Point3D(0, 0, 0));
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorRightHand));
@@ -316,12 +309,18 @@ namespace StarFlowers
             this.spawnPoints.Add(this.colorMousePoint, new Point3D(0, 0, 0));
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorHandCenterPoint));
             this.spawnPoints.Add(this.colorHandCenterPoint, new Point3D(0, 0, 0));
-            //this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, Colors.Gray));
-            //this.spawnPoints.Add(Colors.Gray, new Point3D(0, 0, 0));
 
-            rand = new Random(this.GetHashCode());
+            rand = new Random();
 
-            //this.Cursor = System.Windows.Input.Cursors.None;
+            
+            for(int i = 0; i < this.handCenterThicknesses.Length; i++){
+                this.playerCenterPoints[i] = new List<Point3D>();
+                this.rightHandPoints[i] = new List<Point3D>();
+                this.leftHandPoints[i] = new List<Point3D>();
+                this.handCenterPoints[i] = new List<Point3D>();
+                this.handCenterThicknesses[i] = 10.0;
+            }
+
         }
 
         private void initDrawingData()
@@ -346,8 +345,6 @@ namespace StarFlowers
             this.brushCenterPointNotTracked = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorCenterPointNotTracked);
             this.brushHandCenterPoint = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorHandCenterPoint);
         }
-
-        
 
         private void OnFrame(object sender, EventArgs e)
         {
@@ -383,28 +380,62 @@ namespace StarFlowers
                         pm.SpawnParticle(sp.Value, 10.0, sp.Key, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
                     }
                 }
-
             }
 
-            double c = Math.Cos(this.totalElapsed);
-            double s = Math.Sin(this.totalElapsed);
+            //setting spawn points
+            //for (int screenCounter = 0; screenCounter < 1; screenCounter++)
+            //{ //TODO
+            for(int screenCounter = 0; screenCounter < 1; screenCounter++){
+                //foreach (Point3D point in this.playerCenterPoints[screenCounter])
+                //{
+                //    //spawn the points
+                //    if (point.X > 0.01 || point.X < -0.01)
+                //    {
+                //        ////only for body center
+                //        //if (sp.Key != this.colorBodyCenter || (sp.Key == this.colorBodyCenter && !this.trackingSkeleton))
+                //        //{
+                //            pm.SpawnParticle(point, 10.0, this.colorBodyCenter, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+                //        //}
 
-            //this.spawnPoint = new Point3D(s * 400.0, c * 200.0, 0.0);
+                //    }
+                //}
 
-            //using (DrawingContext dc = this.drawingGroup2.Open())
-            //{
-            //    // Draw a transparent background to set the render size
-            //    dc.DrawRectangle(Brushes.Transparent, null, new Rect(0.0, 0.0, this.Width, this.Height));
 
-            //    for (int i = 0; i < 100; i++)
-            //    {
-            //        Point tempPoint = new Point(this.mousePosition.X + rand.NextDouble()*50, this.mousePosition.Y + rand.NextDouble()*50);
-            //        dc.DrawEllipse(this.MouseBrush, null, tempPoint, MouseThickness, MouseThickness);
-            //    }
 
-            //    // prevent drawing outside of our render area
-            //    //this.drawingGroup2.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, RenderWidth, RenderHeight));
-            //}
+                if (!this.trackingSkeleton)
+                {
+                    this.spawnThosePoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
+                }
+                this.spawnThosePoints(this.rightHandPoints[screenCounter], this.colorRightHand);
+                this.spawnThosePoints(this.leftHandPoints[screenCounter], this.colorLeftHand);
+                this.spawnThosePoints(this.handCenterPoints[screenCounter], this.colorHandCenterPoint);
+
+                //foreach (KeyValuePair<Color, Point3D> sp in this.spawnPoints)
+                //{
+                //    //spawn the points
+                //    if (sp.Value.X > 0.01 || sp.Value.X < -0.01)
+                //    {
+                //        if (sp.Key != this.colorBodyCenter || (sp.Key == this.colorBodyCenter && !this.trackingSkeleton))
+                //        {
+                //            pm.SpawnParticle(sp.Value, 10.0, sp.Key, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+                //        }
+                //    }
+                //}
+            }
+
+        }
+
+        private void spawnThosePoints(List<Point3D> list, Color color)
+        {
+            foreach (Point3D point in list)
+            {
+                //spawn the points
+                if (point.X > 0.01 || point.X < -0.01)
+                {
+                    //for everything else
+                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * rand.NextDouble(), particleLifeMultiplier * rand.NextDouble());
+                }
+            }
         }
 
         private void SensorAllFramesReady(object sender, AllFramesReadyEventArgs e)
@@ -418,6 +449,13 @@ namespace StarFlowers
             bool colorReceived = false;
             bool skeletonReceived = false;
             Skeleton[] skeletons = new Skeleton[0];
+            
+            int screenCounter = 0; //0 left screen, 1 right screen
+            //do loop over all screens / kinects
+            this.rightHandPoints[screenCounter].Clear();
+            this.leftHandPoints[screenCounter].Clear();
+            this.handCenterPoints[screenCounter].Clear();
+            this.playerCenterPoints[screenCounter].Clear();
 
             using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
             {
@@ -544,8 +582,6 @@ namespace StarFlowers
                     // Mittelpunkt als Position vom Skeleton definieren
                     foreach (Skeleton skel in skeletons)
                     {
-
-
                         if (skel.TrackingState == SkeletonTrackingState.PositionOnly)
                         {
                             playerCenterPoint = SkeletonPointToScreen(skel.Position);
@@ -561,6 +597,7 @@ namespace StarFlowers
                                 || rightHand.TrackingState == JointTrackingState.Inferred)
                             {
                                 rightHandPoint = SkeletonPointToScreen(rightHand.Position);
+                                this.rightHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint)));
                                 this.spawnPoints[this.colorRightHand] = pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint));
                             }
 
@@ -568,6 +605,7 @@ namespace StarFlowers
                                 || leftHand.TrackingState == JointTrackingState.Inferred)
                             {
                                 leftHandPoint = SkeletonPointToScreen(leftHand.Position);
+                                this.leftHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint)));
                                 this.spawnPoints[this.colorLeftHand] = pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint));
                                 
                             }
@@ -581,7 +619,8 @@ namespace StarFlowers
 
                                 double distance = Math.Sqrt(Math.Pow(rightHandPoint.X - leftHandPoint.X, 2) + Math.Pow(rightHandPoint.Y - leftHandPoint.Y, 2));
                                 this.HandCenterThickness = distance / 8;
-
+                                this.handCenterThicknesses[screenCounter] = distance / 8;
+                                this.handCenterPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint)));
                                 this.spawnPoints[this.colorHandCenterPoint] = pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint));
                                 
                             }
@@ -612,6 +651,7 @@ namespace StarFlowers
                 //Console.WriteLine("CenterPointPixel: " + centerPointPixel);
                 //Console.WriteLine("------");
 
+                /*
                 using (DrawingContext dc = drawingGroup.Open()) 
                 {
                      
@@ -636,6 +676,7 @@ namespace StarFlowers
                     }
                     
                 }
+                */
 
                 //drawingGroup.ClipGeometry = new RectangleGeometry(new Rect(0.0, 0.0, 640.0, 480.0));
 
@@ -666,10 +707,9 @@ namespace StarFlowers
 
             if (playerCenterPoint != null)
             {
-                //this.setSpawnPoint(this.stretchDepthPointToScreen(playerCenterPoint));
                 if (!this.trackingSkeleton)
                 {
-                    //this.setBodyCenterSpawnPoint(this.stretchDepthPointToScreen(playerCenterPoint));
+                    this.playerCenterPoints[screenCounter].Add(this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint)));
                     this.spawnPoints[this.colorBodyCenter] = this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint));
                 }
             }

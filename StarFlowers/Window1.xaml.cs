@@ -183,13 +183,13 @@ namespace StarFlowers
         private void addSpriteContainer()
         {
             Image img = new Image();
-            img.Width = 640;
+            img.Width = 600;
             img.Height = 480;
             img.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
             img.VerticalAlignment = System.Windows.VerticalAlignment.Top;
             this.FlowerGrid.Children.Add(img);
             this.availableSpriteContainers.Add(img);
-            this.currentlyAvailableContainersCount = this.currentlyAvailableContainersCount+this.availableSpriteContainers.Count;
+            this.currentlyAvailableContainersCount = this.currentlyAvailableContainersCount + this.availableSpriteContainers.Count;
         }
 
         /// <summary>
@@ -471,7 +471,7 @@ namespace StarFlowers
                 for (int spriteCount = 0; spriteCount < this.activeSpriteContainers.Count; spriteCount++)
                 {
                     Image currentSprite = this.activeSpriteContainers[spriteCount];
-                    currentSprite.Source = this.spriteImages[spriteCount % this.spriteCountUnique, (this.currentFrameCount) % this.numberFrames];
+                    currentSprite.Source = this.spriteImages[spriteCount % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
                     if (currentSprite.Height < this.spriteHeight)
                     {
                         currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 1, currentSprite.Margin.Top - 2, 0, 0);
