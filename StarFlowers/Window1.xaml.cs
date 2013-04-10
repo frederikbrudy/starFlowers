@@ -106,6 +106,9 @@ namespace StarFlowers
         private int xOffset;
         private bool alertBlinking = false;
         private int alertBlinkingSeconds;
+        private bool triggerBlinking;
+        private double triggerDiff;
+        private int xOffsetDiff;
 
         public Window1()
         {
@@ -116,6 +119,8 @@ namespace StarFlowers
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
             this.initSprites();
+            this.TriggerArea.Fill = ColorsAndBrushes.getBrushFromColorLinearGradient(Colors.Red);
+            this.TriggerArea.Margin = new Thickness(0, this.Height - this.TriggerArea.Height, 0, 0);
         }
 
         private void initSprites()
@@ -159,12 +164,17 @@ namespace StarFlowers
         {
             this.alertBlinking = true;
             this.alertBlinkingSeconds = seconds;
-            this.MainGrid.Width = this.Width;
-            this.MainGrid.Height = this.Height;
-            this.MainGrid.Background = Brushes.Red;
+            this.FlowerGrid.Width = this.Width;
+            this.FlowerGrid.Height = this.Height;
+            this.FlowerGrid.Background = Brushes.Red;
 
             //TODO clear images and reset to default values
 
+        }
+
+        private void triggerAreaBlink(bool blinking)
+        {
+            this.triggerBlinking = blinking;
         }
 
         /// <summary>
@@ -177,7 +187,7 @@ namespace StarFlowers
             img.Height = 480;
             img.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
             img.VerticalAlignment = System.Windows.VerticalAlignment.Top;
-            this.MainGrid.Children.Add(img);
+            this.FlowerGrid.Children.Add(img);
             this.availableSpriteContainers.Add(img);
             this.currentlyAvailableContainersCount = this.currentlyAvailableContainersCount+this.availableSpriteContainers.Count;
         }
@@ -266,6 +276,11 @@ namespace StarFlowers
             else if (e.Key.Equals(System.Windows.Input.Key.G))
             {
                 this.blinkAlert(3);
+                frameTimer.Start();
+            }
+            else if (e.Key.Equals(System.Windows.Input.Key.T))
+            {
+                this.triggerAreaBlink(!this.triggerBlinking);
                 frameTimer.Start();
             }
             else if (e.Key.Equals(System.Windows.Input.Key.F11))
@@ -362,6 +377,33 @@ namespace StarFlowers
         {
             //this.MainGrid.Margin
             this.currentFrameCount++;
+            if (this.triggerBlinking)
+            {
+                if (this.TriggerArea.Opacity < 0.1)
+                {
+                    this.triggerDiff = 0.05;
+                }
+                else if (this.TriggerArea.Opacity > 0.9)
+                {
+                    this.triggerDiff = -0.05;
+                }
+
+                this.TriggerArea.Opacity += this.triggerDiff;
+
+                //if (this.TriggerArea.Opacity > 0.1 && this.TriggerArea.Opacity < 0.9)
+                //{
+
+                //}
+                //if (this.TriggerArea.Opacity < 1.0)
+                //{
+                //    this.TriggerArea.Opacity += 0.1;
+                //}
+                //else
+                //{
+
+                //}
+            }
+
             if (alertBlinking)
             {
                 if (this.alertBlinkingSeconds > 0)
@@ -369,21 +411,21 @@ namespace StarFlowers
                     if (this.currentFrameCount % 5 == 0)
                     {
                         //switch background color
-                        if (this.MainGrid.Background.Equals(Brushes.Red))
+                        if (this.FlowerGrid.Background.Equals(Brushes.Red))
                         {
-                            this.MainGrid.Background = Brushes.Black;
+                            this.FlowerGrid.Background = Brushes.Black;
                         }
-                        else if (this.MainGrid.Background.Equals(Brushes.Black))
+                        else if (this.FlowerGrid.Background.Equals(Brushes.Black))
                         {
-                            this.MainGrid.Background = Brushes.Green;
+                            this.FlowerGrid.Background = Brushes.Green;
                         }
-                        else if (this.MainGrid.Background.Equals(Brushes.Green))
+                        else if (this.FlowerGrid.Background.Equals(Brushes.Green))
                         {
-                            this.MainGrid.Background = Brushes.Blue;
+                            this.FlowerGrid.Background = Brushes.Blue;
                         }
                         else
                         {
-                            this.MainGrid.Background = Brushes.Red;
+                            this.FlowerGrid.Background = Brushes.Red;
                         }
                         if (this.currentFrameCount % 60 == 0)
                         {
@@ -394,16 +436,34 @@ namespace StarFlowers
             }
             else
             {
-                if (this.currentFrameCount % 120 == 0)
+                if (this.currentFrameCount % 120 == 0 && this.xOffset <= 0)
                 {
-                    xOffset = random.Next(300);
-                    xOffset = 150 - xOffset;
+                    //every 120 frames: set random offset to left or right
+                    this.xOffset = random.Next(300);
+                    this.xOffset = 150 - this.xOffset;
                 }
 
-                if (xOffset > 0 && this.currentFrameCount % 2 == 0)
+                if (this.currentFrameCount % 2 == 0)
                 {
-                    this.MainGrid.Margin = new Thickness(this.MainGrid.Margin.Left - 1, 0, 0, 0);
-                    xOffset--;
+                    //check this only every other frame, so the animation seems smooth
+                    if (this.xOffset > 0)
+                    {
+                        //if there is a offset to the right, do it
+                        //this.FlowerGrid.Margin = new Thickness(this.FlowerGrid.Margin.Left - 1, 0, 0, 0);
+                        this.xOffsetDiff = 1;
+                        this.xOffset--;
+                    }
+                    else if (this.xOffset < 0)
+                    {
+                        //if there is an offset to the left, do it
+                        //this.FlowerGrid.Margin = new Thickness(this.FlowerGrid.Margin.Left - 1, 0, 0, 0);
+                        this.xOffsetDiff = -1;
+                        this.xOffset++;
+                    }
+                }
+                else
+                {
+                    this.xOffsetDiff = 0;
                 }
 
                 this.seedSeeds();
@@ -411,11 +471,16 @@ namespace StarFlowers
                 for (int spriteCount = 0; spriteCount < this.activeSpriteContainers.Count; spriteCount++)
                 {
                     Image currentSprite = this.activeSpriteContainers[spriteCount];
-                    currentSprite.Source = this.spriteImages[(spriteCount + this.numberFrames / 3) % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
+                    currentSprite.Source = this.spriteImages[spriteCount % this.spriteCountUnique, (this.currentFrameCount) % this.numberFrames];
                     if (currentSprite.Height < this.spriteHeight)
                     {
                         currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 1, currentSprite.Margin.Top - 2, 0, 0);
                         currentSprite.Height = currentSprite.Height + 2;
+                    }
+                    if (this.xOffsetDiff != 0)
+                    {
+                        //aply the offset
+                        currentSprite.Margin = new Thickness(currentSprite.Margin.Left + xOffsetDiff, currentSprite.Margin.Top, 0, 0);
                     }
                 }
             }

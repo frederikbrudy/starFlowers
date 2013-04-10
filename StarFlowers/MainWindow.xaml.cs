@@ -338,49 +338,16 @@ namespace StarFlowers
 
         private void initBrushes()
         {
-            //RadialGradientBrush b = new RadialGradientBrush();
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, color.R, color.G, color.B), 0.25));
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, color.R, color.G, color.B), 1.0));
-            //MouseBrush = b;
-
-            
-
-            //b = new RadialGradientBrush();
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, this.colorLeftHand.R, this.colorLeftHand.G, this.colorLeftHand.B), 0.25));
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, this.colorLeftHand.R, this.colorLeftHand.G, this.colorLeftHand.B), 1.0));
-            //this.brushLeftHand = b;
-
-            //b = new RadialGradientBrush();
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, this.colorRightHand.R, this.colorRightHand.G, this.colorRightHand.B), 0.25));
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, this.colorRightHand.R, this.colorRightHand.G, this.colorRightHand.B), 1.0));
-            //this.brushRightHand = b;
-
-            //b = new RadialGradientBrush();
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, this.colorMousePoint.R, this.colorMousePoint.G, this.colorMousePoint.B), 0.25));
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, this.colorMousePoint.R, this.colorMousePoint.G, this.colorMousePoint.B), 1.0));
-            //this.brushMousePoint = b;
-
-            //b = new RadialGradientBrush();
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, this.colorBodyCenter.R, this.colorBodyCenter.G, this.colorBodyCenter.B), 0.25));
-            //b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, this.colorBodyCenter.R, this.colorBodyCenter.G, this.colorBodyCenter.B), 1.0));
-            //this.brushBodyCenter = b;
-            this.brushLeftHand = this.getBrushFromColor(this.colorLeftHand);
-            this.brushRightHand = this.getBrushFromColor(this.colorRightHand);
-            //this.MouseBrush = this.getBrushFromColor(this.colorMousePoint);
-            this.brushMousePoint = this.getBrushFromColor(this.colorMousePoint);
-            this.brushBodyCenter = this.getBrushFromColor(this.colorBodyCenter);
-            this.brushCenterPointTracked = this.getBrushFromColor(this.colorCenterPointTracked);
-            this.brushCenterPointNotTracked = this.getBrushFromColor(this.colorCenterPointNotTracked);
-            this.brushHandCenterPoint = this.getBrushFromColor(this.colorHandCenterPoint);
+            this.brushLeftHand = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorLeftHand);
+            this.brushRightHand = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorRightHand);
+            this.brushMousePoint = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorMousePoint);
+            this.brushBodyCenter = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorBodyCenter);
+            this.brushCenterPointTracked = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorCenterPointTracked);
+            this.brushCenterPointNotTracked = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorCenterPointNotTracked);
+            this.brushHandCenterPoint = ColorsAndBrushes.getBrushFromColorRadialGradient(this.colorHandCenterPoint);
         }
 
-        private Brush getBrushFromColor(Color color)
-        {
-            RadialGradientBrush b = new RadialGradientBrush();
-            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, color.R, color.G, color.B), 0.25));
-            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, color.R, color.G, color.B), 1.0));
-            return b;
-        }
+        
 
         private void OnFrame(object sender, EventArgs e)
         {
