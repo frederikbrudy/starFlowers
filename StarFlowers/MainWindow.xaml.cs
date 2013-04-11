@@ -332,9 +332,9 @@ namespace StarFlowers
         /// </summary>
         /// <param name="point2D"></param>
         /// <returns></returns>
-        private Point3D pointTo3DPoint(System.Windows.Point point2D)
+        private Point3D pointTo3DPoint(System.Windows.Point point2D, int offset)
         {
-            return new Point3D(point2D.X - (this.Width / 2), (this.Height / 2) - point2D.Y, 0.0);
+            return new Point3D((point2D.X/2) - (this.Width / 2) + offset, (this.Height / 2) - point2D.Y, 0.0);
         }
 
         /// <summary>
@@ -423,13 +423,15 @@ namespace StarFlowers
         {
             this.WindowStyle = WindowStyle.None;
             this.WindowState = WindowState.Maximized;
-            this.Background = System.Windows.Media.Brushes.White;
+            this.Background = System.Windows.Media.Brushes.Black;
             this.Cursor = System.Windows.Input.Cursors.None;
 
             Rect size = System.Windows.SystemParameters.WorkArea; //size of the display, minus the task bar
             double primaryWidth = System.Windows.SystemParameters.FullPrimaryScreenWidth;
             double desiredWidth = primaryWidth;
-            desiredWidth = 1366; //1366 , 3412 , 1706
+            //desiredWidth = 1366; //1366 , 3412 , 1706
+            this.Camera.Width = desiredWidth;
+            this.World.Width = desiredWidth;
             //this.Width = size.Width;
             //this.Height = size.Height;
             this.Width = desiredWidth;
@@ -600,6 +602,7 @@ namespace StarFlowers
                 this.leftHandPoints[screenCounter].Clear();
                 this.handCenterPoints[screenCounter].Clear();
                 this.playerCenterPoints[screenCounter].Clear();
+                int offset = (screenCounter == 0) ? (0) : ((int)this.Width / 2);
 
                 bool skeletonTracked = false;
                 Skeleton skeleton = new Skeleton();
@@ -706,14 +709,14 @@ namespace StarFlowers
                             || rightHand.TrackingState == JointTrackingState.Inferred)
                         {
                             rightHandPoint = SkeletonPointToScreen(rightHand.Position);
-                            this.rightHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint)));
+                            this.rightHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint), offset));
                         }
 
                         if (leftHand.TrackingState == JointTrackingState.Tracked
                             || leftHand.TrackingState == JointTrackingState.Inferred)
                         {
                             leftHandPoint = SkeletonPointToScreen(leftHand.Position);
-                            this.leftHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint)));
+                            this.leftHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint), offset));
                         }
 
                         if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.Height * 0.9)
@@ -736,7 +739,7 @@ namespace StarFlowers
                                                         + Math.Pow(rightHandPoint.Y - leftHandPoint.Y, 2));
 
                             this.handCenterThicknesses[screenCounter] = distance / 8;
-                            this.handCenterPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint)));
+                            this.handCenterPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint), offset));
                         }
                     }
 
@@ -800,7 +803,7 @@ namespace StarFlowers
                 {
                     if (!this.trackingSkeleton)
                     {
-                        this.playerCenterPoints[screenCounter].Add(this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint)));
+                        this.playerCenterPoints[screenCounter].Add(this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint), offset));
                     }
                 }
 
