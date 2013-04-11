@@ -7,15 +7,6 @@
         <!--<Grid.Effect>
             <BlurEffect></BlurEffect>
         </Grid.Effect>-->
-        <!--<Image Source="Images/lmu_muenchen_logo.png"></Image>-->
-        <!--<Rectangle x:Name="imgRect">
-            <Rectangle.Fill>
-                <ImageBrush x:Name="imgBrush" ImageSource="walking_spritesheet.png" Stretch="None" AlignmentX="Left" AlignmentY="Top" />
-            </Rectangle.Fill>
-        </Rectangle>-->
-        <!--<Image Name="sprite1" Width="640" Height="480" Margin="640,0,1712,-8"></Image>
-        <Image Name="sprite2" Width="640" Height="480" Margin="1176,0,1176,-8"></Image>
-        <Image Name="sprite3" Width="640" Height="480" Margin="1816,0,536,-8"></Image>-->
         <Canvas Name="FlowerGrid" HorizontalAlignment="Left" VerticalAlignment="Top">
         </Canvas>
         <Rectangle Name="TriggerArea" HorizontalAlignment="Left" VerticalAlignment="Top" 

@@ -10,7 +10,6 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
@@ -36,9 +35,6 @@ namespace StarFlowers
         /// number of frames per sprite animation. must be the same for each animation.
         /// </summary>
         int numberFrames = -1;
-
-        //int currentRow = 0;
-        //int currentColumn = 0;
 
         /// <summary>
         /// width of a single sprite frame
@@ -222,49 +218,6 @@ namespace StarFlowers
                 }
                 Console.WriteLine("loading done");
             }
-
-            /*
-            //creating sprites from spritesheet
-            for (int spriteCount = 0; spriteCount < this.spriteFilenames.Length; spriteCount++)
-            {
-                System.Drawing.Rectangle cropRect = new System.Drawing.Rectangle(0, 0, this.spriteWidth, this.spriteHeight);
-                System.Drawing.Bitmap src = System.Drawing.Image.FromFile(this.spriteFilenames[spriteCount]) as System.Drawing.Bitmap;
-                System.Drawing.Bitmap target;// = new System.Drawing.Bitmap(cropRect.Width, cropRect.Height);
-                //this.frames = new BitmapSource[this.numberFrames];
-
-                for (int row = 0; row < this.ximages; row++)
-                {
-                    for (int col = 0; col < this.yimages; col++)
-                    {
-                        int currentX = row * this.spriteWidth;
-                        int currentY = col * this.spriteHeight;
-
-                        cropRect.X = currentX;
-                        cropRect.Y = currentY;
-
-                        target = new System.Drawing.Bitmap(cropRect.Width, cropRect.Height);
-
-                        using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(target))
-                        {
-                            g.DrawImage(src, new System.Drawing.Rectangle(0, 0, target.Width, target.Height),
-                                cropRect, System.Drawing.GraphicsUnit.Pixel);
-                        }
-
-                        BitmapSource frame = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                           target.GetHbitmap(), IntPtr.Zero,
-                           System.Windows.Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight(target.Width, target.Height));
-
-                        int index = row + col * this.ximages;
-                        Console.WriteLine("row: " + row + ", col: " + col + ", index: " + index);
-                        //this.frames[index] = frame;
-                        this.sprites[spriteCount, index] = frame;
-
-                    }
-                }
-                //this.sprites[spriteCount] = this.frames;
-                GC.Collect();
-            }
-            */
         }
 
         private void keydown(object sender, KeyEventArgs e)
@@ -307,8 +260,6 @@ namespace StarFlowers
                     this.seedSeeds();
 
                     frameTimer.Start();
-
-                    //this.startAnimation(this.sprite0, 480, 0, 0);
                 }
                 else
                 {
@@ -389,19 +340,6 @@ namespace StarFlowers
                 }
 
                 this.TriggerArea.Opacity += this.triggerDiff;
-
-                //if (this.TriggerArea.Opacity > 0.1 && this.TriggerArea.Opacity < 0.9)
-                //{
-
-                //}
-                //if (this.TriggerArea.Opacity < 1.0)
-                //{
-                //    this.TriggerArea.Opacity += 0.1;
-                //}
-                //else
-                //{
-
-                //}
             }
 
             if (alertBlinking)
@@ -485,41 +423,5 @@ namespace StarFlowers
                 }
             }
         }
-
-        private void startAnimation(Image animatedImage, int oldMarginX, int newMarginX, int globalMarginX)
-        {
-            // Create a new animation with start and end values, duration and
-            // an optional completion handler.
-            /*
-            DoubleAnimation da = new DoubleAnimation();
-            da.From = oldMarginX;
-            da.To = newMarginX;
-            da.Duration = new Duration(TimeSpan.FromSeconds(1));
-            //da.RepeatBehavior = RepeatBehavior.Forever;
-            //da.AutoReverse = true;
-            //da.Completed += new EventHandler(Animation_Completed);
-            da.Completed += (sender, eArgs) => AnimationCompleted(animatedImage, oldMarginX, newMarginX, globalMarginX+newMarginX); // syntax with parameters
-            */
-
-            // Start animating the x-translation 
-            //TranslateTransform rt = new TranslateTransform();
-            //animatedImage.RenderTransform = rt;
-            //rt.BeginAnimation(TranslateTransform.YProperty, da);
-
-            //ScaleTransform scaleTransform1 = new ScaleTransform(1.5, 2.0, 50, 50);
-            //animatedImage.RenderTransform = scaleTransform1;
-            //scaleTransform1.BeginAnimation(ScaleTransform.ScaleYProperty, da);
-        }
-
-        private void AnimationCompleted(Image animatedImage, int oldMarginX, int newMarginX, int globalMarginX)
-        {
-            //Console.WriteLine("margin: " + this.sprite0.Margin);
-            //Console.WriteLine("animatedImage: " + animatedImage.Margin);
-            //this.sprite0.Margin = new Thickness(globalMarginX, 0, 0, 0);
-            //this.startAnimation(this.sprite0, 0, newMarginX, globalMarginX);
-            //set new position
-            //this.startAnimation(this.sprite0, oldMarginX, newMarginX);
-        }
-
     }
 }
