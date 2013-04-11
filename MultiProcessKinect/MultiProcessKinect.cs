@@ -88,10 +88,8 @@ namespace MultiProcessKinect
             }
 
             while (true) /// Endlosschleife, damit der Prozess offen bleibt
-            {
-                Console.WriteLine("depthPixels.Length" + depthPixels.Length);
-                Console.WriteLine("colorPixels.Length" + colorPixels.Length);                
-                Thread.Sleep(100);
+            {            
+                Thread.Sleep(1000);
             }
   
         }
