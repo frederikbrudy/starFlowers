@@ -89,13 +89,16 @@ namespace MultiProcessKinect
 
             while (true) /// Endlosschleife, damit der Prozess offen bleibt
             {
-                Thread.Sleep(1000);
+                Console.WriteLine("depthPixels.Length" + depthPixels.Length);
+                Console.WriteLine("colorPixels.Length" + colorPixels.Length);                
+                Thread.Sleep(100);
             }
   
         }
 
         private static void SensorAllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
+            
             bool skeletonFound = false;
             
             using (SkeletonFrame skeletonFrame = e.OpenSkeletonFrame())
@@ -145,7 +148,7 @@ namespace MultiProcessKinect
 
             }
 
-            if (!skeletonFound)
+            if (true) // ehem. if !skeletonFound
             {
                 using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
                 {
@@ -167,7 +170,7 @@ namespace MultiProcessKinect
                 }
             }
 
-            if (skeletonFound)
+            if (true) // ehem. if skeletonfound
             {
                 using (ColorImageFrame colorFrame = e.OpenColorImageFrame())
                 {

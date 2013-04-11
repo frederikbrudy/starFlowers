@@ -13,6 +13,16 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Drawing;
+using Particles;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media.Media3D;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
 
 namespace MultiProcessMain
 {
@@ -159,9 +169,9 @@ namespace MultiProcessMain
 
                             if (
                                 (halsJoint.TrackingState == JointTrackingState.Tracked
-                              || halsJoint.TrackingState == JointTrackingState.Inferred)
+                              /*|| halsJoint.TrackingState == JointTrackingState.Inferred*/)
                               && (kopfJoint.TrackingState == JointTrackingState.Tracked
-                              || kopfJoint.TrackingState == JointTrackingState.Inferred))
+                              /*|| kopfJoint.TrackingState == JointTrackingState.Inferred*/))
                             {
 
                                //var p1 = this.SkeletonPointToScreen(halsJoint.Position).X;
@@ -179,10 +189,6 @@ namespace MultiProcessMain
 
                             // Testausgaben
                             Console.WriteLine("Tracking ID:   " + receivedSkel.TrackingId);
-                            //Console.WriteLine("Hash-Code:   " + receivedSkel.GetHashCode());
-                            //Console.WriteLine("Tracking State:   "+ receivedSkel.TrackingState);
-                            //var receivedSkelPos = receivedSkel.Position;
-                            //Console.WriteLine("Position:   " + receivedSkelPos.X + " " + receivedSkelPos.Y + " " + receivedSkelPos.Z);
                             Console.WriteLine("------------");
                         }
                         else
