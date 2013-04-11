@@ -1,23 +1,27 @@
-﻿using Particles;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Collections;
+using System.Diagnostics;
+using System.Threading;
+using System.IO.MemoryMappedFiles;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Kinect;
-using System.IO;
-
+using Particles;
 
 namespace StarFlowers
 {
@@ -26,6 +30,34 @@ namespace StarFlowers
     /// </summary>
     public partial class MainWindow : Window
     {
+        private bool runningGameThread = false;
+
+        public static List<KinectSensor> sensors; // alle angeschlossenen Sensoren
+        List<Process> processes; // Prozesse der Kinect-Konsolenanwendung
+        // Mutual Exclusion verhindert gleichzeitig Zugriff der Prozesse auf zu lesende Daten
+        static Mutex mutex;
+        // enthaelt zu lesende Daten, die die Prozesse generieren
+        static MemoryMappedFile[] skeletonFiles;
+        static MemoryMappedFile[] depthFiles;
+        static MemoryMappedFile[] colorFiles;
+
+        private const long SkeletonObjektByteLength = 2255;
+        private const long ColorAndDepthPixelArrayByteLength = 1228800; // 640 x 480 x 4 bytes
+
+        private const float RenderWidth = 640.0f;
+        private const float RenderHeight = 480.0f;
+        private const double JointThickness = 3;
+        private const double BodyCenterThickness = 10;
+        private const double ClipBoundsThickness = 10;
+        private readonly Brush centerPointBrush = Brushes.Blue;
+        private readonly Brush trackedJointBrush = new SolidColorBrush(Color.FromArgb(255, 68, 192, 68));
+        private readonly Brush inferredJointBrush = Brushes.Yellow;
+        private readonly Pen trackedBonePen = new Pen(Brushes.Green, 6);
+        private readonly Pen inferredBonePen = new Pen(Brushes.Gray, 1);
+        private DrawingGroup leftDrawingGroup, rightDrawingGroup;
+        private WriteableBitmap[] images;
+        private DrawingImage leftImageSource, rightImageSource;
+        
         private const DepthImageFormat DepthFormat = DepthImageFormat.Resolution640x480Fps30;
         private const ColorImageFormat ColorFormat = ColorImageFormat.RgbResolution640x480Fps30;                
         private KinectSensor sensor;
@@ -46,9 +78,6 @@ namespace StarFlowers
         private int opaquePixelValue = -1;
 
         private int colorToDepthDivisor;
-
-
-        
 
         private DrawingGroup drawingGroup;
         private DrawingImage imageSource;
@@ -85,8 +114,6 @@ namespace StarFlowers
 
         private Random rand;
 
-        
-
         /// <summary>
         /// Thickness of body center ellipse
         /// </summary>
@@ -109,7 +136,7 @@ namespace StarFlowers
         private List<Point3D>[] playerCenterPoints = new List<Point3D>[2];
         private double[] handCenterThicknesses = new double[2];
 
-        private Point playerCenterPoint; // Mittelpunkt des Shapes von einem Player
+        private System.Windows.Point playerCenterPoint; // Mittelpunkt des Shapes von einem Player
         Point rightHandPoint = new Point();
         Point leftHandPoint = new Point();
         //Point handCenterPoint = new Point();
