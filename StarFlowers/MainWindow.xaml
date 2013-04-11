@@ -10,9 +10,11 @@
         <!--<Grid.LayoutTransform>
             <ScaleTransform ScaleX="0.375" ></ScaleTransform>
         </Grid.LayoutTransform>-->
-        
-        <Image x:Name="MyImage" />
-        <Image x:Name="HeadTrackedImage" Width="100" Height="100" HorizontalAlignment="Right" VerticalAlignment="Top" />
+
+        <Image x:Name="OverlayImage0" HorizontalAlignment="Left" />
+        <Image x:Name="OverlayImage1" HorizontalAlignment="Right" />
+        <Image x:Name="HeadTrackedImage0" Width="100" Height="100" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Image x:Name="HeadTrackedImage1" Width="100" Height="100" HorizontalAlignment="Right" VerticalAlignment="Top" />
         <Viewport3D Name="World" Width="1366" Height="768"> <!-- 1706 1366-->
             <Viewport3D.Camera>
                 <OrthographicCamera Position="0,0,1" LookDirection="0,0,-1" UpDirection="0,1,0" Width="1366" /><!-- 3412 1706 1366-->
