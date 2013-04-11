@@ -999,7 +999,7 @@ namespace StarFlowers
         {
             this.WindowStyle = WindowStyle.None;
             this.WindowState = WindowState.Maximized;
-            this.Background = System.Windows.Media.Brushes.Black;
+            this.Background = System.Windows.Media.Brushes.White;
             this.Cursor = System.Windows.Input.Cursors.None;
 
             Rect size = System.Windows.SystemParameters.WorkArea; //size of the display, minus the task bar
@@ -1022,6 +1022,12 @@ namespace StarFlowers
 
             this.FlowerGrid.Height = this.Height;
             Console.WriteLine(this.FlowerGrid.Height);
+
+            Color bgColor = Colors.DarkGray;
+            RadialGradientBrush b = new RadialGradientBrush();
+            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, bgColor.R, bgColor.G, bgColor.B), 0.05));
+            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0x00, bgColor.R, bgColor.G, bgColor.B), 1.0));
+            this.Background = b;
         }
 
         private void initKinect()
