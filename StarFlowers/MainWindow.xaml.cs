@@ -1030,8 +1030,8 @@ namespace StarFlowers
             b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, centerColor.R, centerColor.G, centerColor.B), 0.15));
             b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, midColor.R, midColor.G, midColor.B), 0.5));
             b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, endColor.R, endColor.G, endColor.B), 1.0));
-            this.OverlayImage0.Opacity = 0;
-            this.OverlayImage1.Opacity = 0;
+            //this.OverlayImage0.Opacity = 0;
+            //this.OverlayImage1.Opacity = 0;
             this.Background = b;
         }
 
