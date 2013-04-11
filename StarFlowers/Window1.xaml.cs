@@ -130,6 +130,8 @@ namespace StarFlowers
 
         Random random = new Random();
         private bool resetAvailable;
+        private DateTime oldTime;
+        private const int frameTime = 30;
 
         public Window1()
         {
@@ -160,7 +162,7 @@ namespace StarFlowers
         {
             frameTimer = new System.Windows.Threading.DispatcherTimer();
             frameTimer.Tick += OnFrame;
-            frameTimer.Interval = TimeSpan.FromSeconds(1.0 / 30.0);
+            frameTimer.Interval = TimeSpan.FromSeconds(1.0 / frameTime);
 
             String path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase) + "\\..\\..\\Images\\";
             path = path.Substring(6);
@@ -427,6 +429,10 @@ namespace StarFlowers
             }
         }
 
+        /// <summary>
+        /// resets the entire drawing mode to its default values. 
+        /// only resets if a reset is needed, meaing a reset is available.
+        /// </summary>
         private void resetPlants()
         {
             Console.WriteLine("in reset");
@@ -469,6 +475,12 @@ namespace StarFlowers
             }
         }
 
+        /// <summary>
+        /// removes a given plant of the drawing grid and from the list of active plants.
+        /// the plants is hard-removed, meaning not withering ist done. 
+        /// if you want to wither a plant, set its IsWithering property to true.
+        /// </summary>
+        /// <param name="plantToRemove"></param>
         private void removePlant(Plant plantToRemove)
         {
             this.FlowerGrid.Children.Remove(plantToRemove.Img);
@@ -572,9 +584,26 @@ namespace StarFlowers
             }
         }
 
+        /// <summary>
+        /// increment the time based frame counter
+        /// </summary>
+        private void doFrameCounter()
+        {
+            //this.currentFrameCount++;
+            DateTime currentTime = DateTime.Now;
+
+            int millisSinceLast = (currentTime - this.oldTime).Milliseconds;
+            while (millisSinceLast > frameTime)
+            {
+                this.currentFrameCount += 5;
+                millisSinceLast -= frameTime;
+                this.oldTime = currentTime;
+            }
+        }
+
         private void OnFrame(object sender, EventArgs e)
         {
-            this.currentFrameCount++;
+            this.doFrameCounter();
 
             this.fadeTriggerArea();
 
