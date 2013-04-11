@@ -82,7 +82,7 @@ namespace StarFlowers
         /// <summary>
         /// list of sprite containers, which are currently in use. they will be redrawn on each frame
         /// </summary>
-        List<Plant> activeSpriteContainers;
+        List<Plant> activePlants;
 
         /// <summary>
         /// maximum plant count, meaning the maximum sprite animations which is possible in this application
@@ -129,6 +129,7 @@ namespace StarFlowers
         private int spriteIndexGlobal = 0;
 
         Random random = new Random();
+        private bool resetAvailable;
 
         public Window1()
         {
@@ -178,7 +179,7 @@ namespace StarFlowers
 
             this.addSpriteContainer();
 
-            this.activeSpriteContainers = new List<Plant>(); 
+            this.activePlants = new List<Plant>(); 
             
             this.spriteCountUnique = this.spriteImages.Length / this.numberFrames;
             this.maximumPlantCount = this.spriteCountUnique * 1;
@@ -282,11 +283,15 @@ namespace StarFlowers
                 int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
                 this.queueSeed(randomNumber, Colors.Red);
             }
+            else if (e.Key.Equals(System.Windows.Input.Key.W))
+            {
+                this.witherAllPlants();
+            }
             else if (e.Key.Equals(System.Windows.Input.Key.Enter))
             {
-                    this.seedSeeds();
-                    this.toggleFrameTimer(false);
-                    this.toggleFrameTimer(true);
+                this.seedSeeds();
+                this.toggleFrameTimer(false);
+                this.toggleFrameTimer(true);
             }
         }
 
@@ -315,7 +320,7 @@ namespace StarFlowers
                     double opacity = random.NextDouble()+0.25;
                     opacity = (opacity > 0.9) ? (0.75) : opacity;
                     spriteImg.Opacity = opacity;
-                    this.activeSpriteContainers.Add(tempPlant);
+                    this.activePlants.Add(tempPlant);
 
                     //in onFrame: grow only plants in the growing list.
                 }
@@ -331,7 +336,7 @@ namespace StarFlowers
         /// <param name="color">the plants color</param>
         private void queueSeed(int positionX, Color color)
         {
-            int futurePlantCount = this.activeSpriteContainers.Count + this.seedPosition.Count+1;
+            int futurePlantCount = this.activePlants.Count + this.seedPosition.Count+1;
             if (this.availableSpriteContainers.Count < futurePlantCount //there are not enough containers for all future plants
                 && this.maximumPlantCount >= futurePlantCount) //there is still enough capacity for more plants
             {
@@ -411,45 +416,64 @@ namespace StarFlowers
             }
         }
 
+        /// <summary>
+        /// tell all plants that they are withering
+        /// </summary>
+        private void witherAllPlants()
+        {
+            foreach (Plant plant in this.activePlants)
+            {
+                plant.IsWithering = true;
+            }
+        }
+
         private void resetPlants()
         {
-            //reset offset (offset against burning)
-            this.xOffset = 0;
-            this.xOffsetDiff = 0;
-            
-            //reset alert blinking
-            this.alertBlinkingSeconds = 0;
-            this.alertBlinking = false;
-            this.FlowerGrid.Background = Brushes.Black;
-
-            //reset trigger area
-            this.triggerAreaBlinking = false;
-            this.TriggerArea.Opacity = 0.0;
-
-            this.removeCandidates.Clear();
-
-            for (int i = 0; i < this.activeSpriteContainers.Count; i++)
+            Console.WriteLine("in reset");
+            if (this.resetAvailable)
             {
-                //this.FlowerGrid.Children.Remove(this.activeSpriteContainers[i].Img);
-                //this.activeSpriteContainers[i].Img = null;
-                //this.activeSpriteContainers.Remove(this.activeSpriteContainers[i]);
-                this.removePlant(this.activeSpriteContainers[i]);
+                Console.WriteLine("doing reset");
+                this.resetAvailable = false;
+
+                //reset offset (offset against burning)
+                this.xOffset = 0;
+                this.xOffsetDiff = 0;
+
+                //reset alert blinking
+                this.alertBlinkingSeconds = 0;
+                this.alertBlinking = false;
+                this.FlowerGrid.Background = Brushes.Black;
+
+                //reset trigger area
+                this.triggerAreaBlinking = false;
+                this.TriggerArea.Opacity = 0.0;
+
+                this.removeCandidates.Clear();
+
+                for (int i = 0; i < this.activePlants.Count; i++)
+                {
+                    //this.FlowerGrid.Children.Remove(this.activeSpriteContainers[i].Img);
+                    //this.activeSpriteContainers[i].Img = null;
+                    //this.activeSpriteContainers.Remove(this.activeSpriteContainers[i]);
+                    this.removePlant(this.activePlants[i]);
+                }
+
+                this.activePlants.Clear(); //obsolete
+                this.FlowerGrid.Children.Clear(); //obsolete
+
+                //reset flowers (remove children from grid, remove , update available count, remove 
+                this.seedPosition.Clear();
+                this.seedColor.Clear();
+                //this.availableSpriteContainers; //TODO reuse containers instead of deleting them. 
+                Console.WriteLine("reset done");
             }
-
-            this.activeSpriteContainers.Clear(); //obsolete
-            this.FlowerGrid.Children.Clear(); //obsolete
-
-            //reset flowers (remove children from grid, remove , update available count, remove 
-            this.seedPosition.Clear();
-            this.seedColor.Clear();
-            //this.availableSpriteContainers; //TODO reuse containers instead of deleting them. 
         }
 
         private void removePlant(Plant plantToRemove)
         {
             this.FlowerGrid.Children.Remove(plantToRemove.Img);
             plantToRemove.Img = null;
-            this.activeSpriteContainers.Remove(plantToRemove);
+            this.activePlants.Remove(plantToRemove);
         }
 
 
@@ -493,9 +517,9 @@ namespace StarFlowers
         /// </summary>
         private void careForPlants()
         {
-            for (int spriteCount = 0; spriteCount < this.activeSpriteContainers.Count; spriteCount++)
+            for (int spriteCount = 0; spriteCount < this.activePlants.Count; spriteCount++)
             {
-                Plant currentPlant = this.activeSpriteContainers[spriteCount];
+                Plant currentPlant = this.activePlants[spriteCount];
                 Image currentSprite = currentPlant.Img;
                 //currentSprite.Source = this.spriteImages[spriteCount % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
                 currentSprite.Source = this.spriteImages[currentPlant.SpriteIndex % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
@@ -521,33 +545,30 @@ namespace StarFlowers
                         this.removeCandidates.Add(currentPlant);
                     }
                 }
-                else if (this.currentFrameCount % 10 == 0)
-                {
-                    Console.WriteLine(currentPlant.TimeGrown);
-                    if (currentPlant.TimeGrown > 5)
-                    {
-                        //wither after 5 seconds of being fully grown
-                        currentPlant.IsWithering = true;
-                    }
-                }
+                //else if (this.currentFrameCount % 10 == 0)
+                //{
+                //    Console.WriteLine(currentPlant.TimeGrown);
+                //    if (currentPlant.TimeGrown > 5)
+                //    {
+                //        //wither after 5 seconds of being fully grown
+                //        currentPlant.IsWithering = true;
+                //    }
+                //}
                 if (this.xOffsetDiff != 0)
                 {
                     //aply the offset
                     currentSprite.Margin = new Thickness(currentSprite.Margin.Left + xOffsetDiff, currentSprite.Margin.Top, 0, 0);
                 }
-
             }
 
             if (this.removeCandidates.Count > 0)
             {
                 for (int i = 0; i < this.removeCandidates.Count; i++)
                 {
-                    //this.FlowerGrid.Children.Remove(this.removeCandidates[i].Img);
-                    //this.activeSpriteContainers[i].Img = null;
-                    //this.activeSpriteContainers.Remove(this.removeCandidates[i]);
                     this.removePlant(this.removeCandidates[i]);
                 }
                 this.removeCandidates.Clear();
+                this.resetAvailable = true; //indicates that a plant has been removed and that there might be a complete resete necessary
             }
         }
 
@@ -570,6 +591,14 @@ namespace StarFlowers
                 this.seedSeeds();
 
                 this.careForPlants();
+            }
+
+            if (this.resetAvailable //only if a reset is necessary, meaning that a plant has been removed previously
+                && this.currentFrameCount % 10 == 0 //only every so often. for performance
+                && this.activePlants.Count + this.seedPosition.Count <= 0 //only if there are no more plants left
+                )
+            {
+                this.resetPlants();
             }
         }
 
