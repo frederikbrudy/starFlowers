@@ -109,7 +109,6 @@ namespace StarFlowers
         public Window1()
         {
             InitializeComponent();
-
         }
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
@@ -125,17 +124,14 @@ namespace StarFlowers
             frameTimer.Tick += OnFrame;
             frameTimer.Interval = TimeSpan.FromSeconds(1.0 / 30.0);
 
+            String path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase) + "\\..\\..\\Images\\";
+            path = path.Substring(6);
             String[] spriteFilenames = new String[5];
-            spriteFilenames[0] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Baum1/";
-            spriteFilenames[1] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Baum2/";
-            spriteFilenames[2] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Blume1/";
-            spriteFilenames[3] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Gras1/";
-            spriteFilenames[4] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Gras2/";
-
-            //this.spriteFilenames[0] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/sprite_blume_1.png";
-            //this.spriteFilenames[1] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/sprite_gras_1.png";
-            //this.spriteFilenames[2] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/sprite_blume_1.png";
-            //this.spriteFilenames[3] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/sprite_blume_2.png";
+            spriteFilenames[0] = path + "Baum1\\";
+            spriteFilenames[1] = path + "Baum2\\";
+            spriteFilenames[2] = path + "Blume1\\";
+            spriteFilenames[3] = path + "Gras1\\";
+            spriteFilenames[4] = path + "Gras2\\";
 
             this.spriteImages = new BitmapSource[spriteFilenames.Length, ximages * yimages];
 
