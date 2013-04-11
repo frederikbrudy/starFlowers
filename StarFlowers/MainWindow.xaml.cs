@@ -181,6 +181,7 @@ namespace StarFlowers
                 Process p = new Process();
                 p.StartInfo.CreateNoWindow = false; // laesst das Fenster fuer jeden Prozess angezeigt (fuer Debugging)
                 p.StartInfo.FileName = Environment.CurrentDirectory + "\\..\\..\\..\\MultiProcessKinect\\bin\\Debug\\MultiProcessKinect.exe"; // die 
+                Console.WriteLine(p.StartInfo.FileName);
 
                 p.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
                 p.StartInfo.Arguments = "" + i + " " + sensors[i].UniqueKinectId;

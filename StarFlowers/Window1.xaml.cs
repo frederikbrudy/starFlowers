@@ -130,6 +130,8 @@ namespace StarFlowers
 
         Random random = new Random();
         private bool resetAvailable;
+        private DateTime oldTime;
+        private const int frameTime = 30;
 
         public Window1()
         {
@@ -160,7 +162,7 @@ namespace StarFlowers
         {
             frameTimer = new System.Windows.Threading.DispatcherTimer();
             frameTimer.Tick += OnFrame;
-            frameTimer.Interval = TimeSpan.FromSeconds(1.0 / 30.0);
+            frameTimer.Interval = TimeSpan.FromSeconds(1.0 / frameTime);
 
             String path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase) + "\\..\\..\\Images\\";
             path = path.Substring(6);
@@ -572,9 +574,26 @@ namespace StarFlowers
             }
         }
 
+        /// <summary>
+        /// increment the time based frame counter
+        /// </summary>
+        private void doFrameCounter()
+        {
+            //this.currentFrameCount++;
+            DateTime currentTime = DateTime.Now;
+
+            int millisSinceLast = (currentTime - this.oldTime).Milliseconds;
+            while (millisSinceLast > frameTime)
+            {
+                this.currentFrameCount += 5;
+                millisSinceLast -= frameTime;
+                this.oldTime = currentTime;
+            }
+        }
+
         private void OnFrame(object sender, EventArgs e)
         {
-            this.currentFrameCount++;
+            this.doFrameCounter();
 
             this.fadeTriggerArea();
 
