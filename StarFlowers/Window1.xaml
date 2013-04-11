@@ -6,7 +6,7 @@
         SizeChanged="WindowSizeChanged">
     <Grid Name="Grid" HorizontalAlignment="Left" VerticalAlignment="Top">
         <!--<Grid.Effect>
-            <BlurEffect></BlurEffect>
+            <BlurEffect></BlurEffect> 
         </Grid.Effect>-->
         <Canvas Name="FlowerGrid" HorizontalAlignment="Left" VerticalAlignment="Top">
         </Canvas>

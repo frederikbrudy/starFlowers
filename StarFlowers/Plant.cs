@@ -32,7 +32,7 @@ namespace StarFlowers
 
         public Plant(Image img, int spriteIndex)
         {
-            this.img = img;
+            this.img = img; 
             this.spriteIndex = spriteIndex;
         }
 

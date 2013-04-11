@@ -590,7 +590,7 @@ namespace StarFlowers
 
                 this.seedSeeds();
 
-                this.careForPlants();
+                this.careForPlants(); 
             }
 
             if (this.resetAvailable //only if a reset is necessary, meaning that a plant has been removed previously
