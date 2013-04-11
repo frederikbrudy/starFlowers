@@ -429,6 +429,10 @@ namespace StarFlowers
             }
         }
 
+        /// <summary>
+        /// resets the entire drawing mode to its default values. 
+        /// only resets if a reset is needed, meaing a reset is available.
+        /// </summary>
         private void resetPlants()
         {
             Console.WriteLine("in reset");
@@ -471,6 +475,12 @@ namespace StarFlowers
             }
         }
 
+        /// <summary>
+        /// removes a given plant of the drawing grid and from the list of active plants.
+        /// the plants is hard-removed, meaning not withering ist done. 
+        /// if you want to wither a plant, set its IsWithering property to true.
+        /// </summary>
+        /// <param name="plantToRemove"></param>
         private void removePlant(Plant plantToRemove)
         {
             this.FlowerGrid.Children.Remove(plantToRemove.Img);
