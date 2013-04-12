@@ -250,6 +250,10 @@ namespace StarFlowers
         private bool resetAvailable;
         private DateTime oldTime;
         private const int frameTime = 30;
+        private bool[] currentlySeedingLeft;
+        private bool[] currentlySeedingRight;
+        private bool[] growingPlants;
+        private DateTime lastWithered;
 
         /*
          * end flower area
@@ -262,14 +266,15 @@ namespace StarFlowers
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            this.initSprites();
-            this.initTriggerArea();
 
             this.initWindowSize();
             this.initParticleSystem();
             this.initDrawingData();
             this.initBrushes();
             this.initKinect();
+
+            this.initSprites();
+            this.initTriggerArea();
 
             var mappedfileThread = new Thread(this.MemoryMapData);
             mappedfileThread.SetApartmentState(ApartmentState.STA);
@@ -290,6 +295,8 @@ namespace StarFlowers
             this.TriggerArea.Opacity = 0.0;
             this.TriggerArea.Width = this.Width;
             this.TriggerArea.Margin = new Thickness(0, this.Height - this.TriggerArea.Height, 0, 0);
+
+           
         }
 
         /// <summary>
@@ -329,7 +336,10 @@ namespace StarFlowers
 
             this.removeCandidates = new List<Plant>();
 
-            
+            currentlySeedingLeft = new bool[sensors.Count];
+            currentlySeedingRight = new bool[sensors.Count];
+
+            this.growingPlants = new bool[sensors.Count];
         }
 
         /// <summary>
@@ -1021,7 +1031,7 @@ namespace StarFlowers
                 + ", this.Width: " + this.Width + ", scaleFactor: " + scaleFactor + ", this.ActualWidth: " + this.ActualWidth);
 
             this.FlowerGrid.Height = this.Height;
-            Console.WriteLine(this.FlowerGrid.Height);
+            //Console.WriteLine(this.FlowerGrid.Height);
 
             Color centerColor = Colors.LightGray;
             Color midColor = Colors.DarkGray;
@@ -1216,7 +1226,6 @@ namespace StarFlowers
 
         private void processSensorData(object[] skeletons, DepthImagePixel[][] depthStreams, byte[][] colorStreams)
         {
-            
             for (int screenCounter = 0; screenCounter < sensors.Count; screenCounter++)
             {
 
@@ -1303,6 +1312,8 @@ namespace StarFlowers
                 }
 
                 // ------- Punkte zeichnen (Body Center und ggfs. Hände) ------------
+                
+                this.growingPlants[screenCounter] = true;
 
                 if (!skeletonTracked) // nur Tiefendaten verfügbar, kein Skeleton
                 {
@@ -1316,6 +1327,7 @@ namespace StarFlowers
                     {
                         // Mittelpunkt ist ganz oben links
                         playerCenterPoint = new System.Windows.Point(0.0, 0.0);
+                        this.growingPlants[screenCounter] = false;
                     }
                 }
                 else // Skeleton verfügbar
@@ -1350,18 +1362,35 @@ namespace StarFlowers
                             this.leftHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint), offset));
                         }
 
+
                         if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.Height * 0.9)
                         {
-                            Console.WriteLine("seeding for right hand on skel " + screenCounter);
-                            //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-                            this.queueSeed((int)this.stretchDepthPointToScreen(rightHandPoint).X/2 + offset, Colors.Red);
+                            if (!this.currentlySeedingRight[screenCounter])
+                            {
+                                Console.WriteLine("seeding for right hand on skel " + screenCounter);
+                                //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
+                                this.queueSeed((int)this.stretchDepthPointToScreen(rightHandPoint).X / 2 + offset, Colors.Red);
+                                this.currentlySeedingRight[screenCounter] = true;
+                            }
+                        }
+                        else
+                        {
+                            this.currentlySeedingRight[screenCounter] = false;
                         }
 
                         if (leftHandPoint != null && this.stretchDepthPointToScreen(leftHandPoint).Y > this.Height * 0.9)
                         {
-                            Console.WriteLine("seeding for left hand on skel " + screenCounter);
-                            //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-                            this.queueSeed((int)this.stretchDepthPointToScreen(leftHandPoint).X/2 + offset, Colors.Red);
+                            if (!this.currentlySeedingLeft[screenCounter])
+                            {
+                                Console.WriteLine("seeding for left hand on skel " + screenCounter);
+                                //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
+                                this.queueSeed((int)this.stretchDepthPointToScreen(leftHandPoint).X / 2 + offset, Colors.Red);
+                                this.currentlySeedingLeft[screenCounter] = true;
+                            }
+                        }
+                        else
+                        {
+                            this.currentlySeedingLeft[screenCounter] = false;
                         }
 
                         // wenn beide Hände erkannt wurden, zusätzlich Mittelpunkt zwischen den Händen anzeigen
@@ -1442,10 +1471,25 @@ namespace StarFlowers
                     }
                 }
 
-
             } // end for screencounter-loop
 
-            
+            if(this.activePlants.Count > 0){ //if there are actually any plants which could wither
+                bool wither = true; //assume that withering should happen.
+                foreach (bool growing in this.growingPlants)
+                {
+                    if (growing)
+                    {
+                        //if someone is actually growing any plants, meaning in front of the screen, then do not wither any plants
+                        wither = false;
+                    }
+                }
+
+                if (wither)
+                {
+                    //if withering should occur, then do it.
+                    this.witherAllPlants();
+                }
+            }
         }
 
     }
