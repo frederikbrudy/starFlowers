@@ -684,7 +684,7 @@ namespace StarFlowers
                 currentSprite.Source = this.spriteImages[currentPlant.SpriteIndex % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
                 if (currentPlant.IsGrowing && currentSprite.Height < spriteHeight)
                 {
-                    currentSprite.Margin = new Thickness(currentSprite.Margin.Left, currentSprite.Margin.Top - 4, 0, 0);
+                    currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 1, currentSprite.Margin.Top - 4, 0, 0);
                     currentSprite.Height = currentSprite.Height + 4;
                     if (currentSprite.Height >= spriteHeight)
                     {
@@ -1305,8 +1305,11 @@ namespace StarFlowers
 
                 if (skeletonData != null)
                 {
-                    skeletonTracked = true;
                     skeleton = (Skeleton)(skeletonData); // Tadaa: hier ist das Skeleton
+                    if (skeleton.Position.Z < 2)
+                    {
+                        skeletonTracked = true;
+                    }
                 }
 
                 // wenn Skeleton da: gruener Mittelpunkt, sonst Rot
