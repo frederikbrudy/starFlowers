@@ -258,6 +258,8 @@ namespace StarFlowers
         private double headDiff;
         private bool showHead;
 
+        System.Object particleLock = new Object();
+
         /*
          * end flower area
          * */
@@ -269,7 +271,6 @@ namespace StarFlowers
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-
             this.initWindowSize();
             this.initParticleSystem();
             this.initDrawingData();
@@ -683,8 +684,8 @@ namespace StarFlowers
                 currentSprite.Source = this.spriteImages[currentPlant.SpriteIndex % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
                 if (currentPlant.IsGrowing && currentSprite.Height < spriteHeight)
                 {
-                    currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 1, currentSprite.Margin.Top - 2, 0, 0);
-                    currentSprite.Height = currentSprite.Height + 2;
+                    currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 2, currentSprite.Margin.Top - 4, 0, 0);
+                    currentSprite.Height = currentSprite.Height + 4;
                     if (currentSprite.Height >= spriteHeight)
                     {
                         currentPlant.IsGrowing = false;
@@ -1135,7 +1136,9 @@ namespace StarFlowers
             //setting spawn points
             //for (int screenCounter = 0; screenCounter < 1; screenCounter++)
             //{ //TODO
-            for(int screenCounter = 0; screenCounter < sensors.Count; screenCounter++){
+            for (int screenCounter = 0; screenCounter < sensors.Count; screenCounter++)
+            {
+
                 if (!this.trackingSkeleton)
                 {
                     //not tracking skel. should spawn at body center
@@ -1197,7 +1200,7 @@ namespace StarFlowers
                 if (point.X > 0.01 || point.X < -0.01)
                 {
                     //for everything else
-                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble() * 3, particleLifeMultiplier * random.NextDouble() / 2);
+                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble(), particleLifeMultiplier * random.NextDouble() / 2);
                 }
             }
         }
@@ -1210,7 +1213,7 @@ namespace StarFlowers
                 if (point.X > 0.01 || point.X < -0.01)
                 {
                     //for everything else
-                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble() * 5, particleLifeMultiplier * random.NextDouble());
+                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble() * 2, particleLifeMultiplier * random.NextDouble());
                 }
             }
         }
@@ -1294,6 +1297,7 @@ namespace StarFlowers
                 this.leftHandPoints[screenCounter].Clear();
                 this.handCenterPoints[screenCounter].Clear();
                 this.playerCenterPoints[screenCounter].Clear();
+
                 int offset = (screenCounter == 0) ? (0) : ((int)this.windowWidth / 2);
 
                 bool skeletonTracked = false;
@@ -1400,67 +1404,68 @@ namespace StarFlowers
                         // wenn auch Bones erkannt wurden
 
                         playerCenterPoint = SkeletonPointToScreen(skeleton.Position);
-
-                        // Position von den Händen holen und Punkte dafür hinzufügen
-                        JointCollection joints = skeleton.Joints;
-                        // get the joint
-                        Joint rightHand = skeleton.Joints[JointType.HandRight];
-                        Joint leftHand = skeleton.Joints[JointType.HandLeft];
-                        if (rightHand.TrackingState == JointTrackingState.Tracked
-                            || rightHand.TrackingState == JointTrackingState.Inferred)
-                        {
-                            rightHandPoint = SkeletonPointToScreen(rightHand.Position);
-                            this.rightHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint), offset));
-                        }
-
-                        if (leftHand.TrackingState == JointTrackingState.Tracked
-                            || leftHand.TrackingState == JointTrackingState.Inferred)
-                        {
-                            leftHandPoint = SkeletonPointToScreen(leftHand.Position);
-                            this.leftHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint), offset));
-                        }
-
-                        if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.windowHeight * 0.9)
-                        {
-                            if (!this.currentlySeedingRight[screenCounter])
+                        
+                            // Position von den Händen holen und Punkte dafür hinzufügen
+                            JointCollection joints = skeleton.Joints;
+                            // get the joint
+                            Joint rightHand = skeleton.Joints[JointType.HandRight];
+                            Joint leftHand = skeleton.Joints[JointType.HandLeft];
+                            if (rightHand.TrackingState == JointTrackingState.Tracked
+                                || rightHand.TrackingState == JointTrackingState.Inferred)
                             {
-                                Console.WriteLine("seeding for right hand on skel " + screenCounter);
-                                //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-                                int seedPoint = (int)this.stretchDepthPointToScreen(rightHandPoint).X / 2 + offset;
-                                if(this.queueSeed(seedPoint, Colors.Red)){
-                                    this.lastSeededRight[screenCounter] = seedPoint;
-                                }
-                                this.currentlySeedingRight[screenCounter] = true;
-                                this.blinkTriggerAreaToggle(false);
+                                rightHandPoint = SkeletonPointToScreen(rightHand.Position);
+                                this.rightHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(rightHandPoint), offset));
                             }
-                        }
-                        else
-                        {
-                            stopGrowing(this.lastSeededRight[screenCounter]);
-                            this.currentlySeedingRight[screenCounter] = false;
-                        }
 
-                        if (leftHandPoint != null && this.stretchDepthPointToScreen(leftHandPoint).Y > this.windowHeight * 0.9)
-                        {
-
-                            if (!this.currentlySeedingLeft[screenCounter])
+                            if (leftHand.TrackingState == JointTrackingState.Tracked
+                                || leftHand.TrackingState == JointTrackingState.Inferred)
                             {
-                                Console.WriteLine("seeding for left hand on skel " + screenCounter);
-                                //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-                                int seedPoint = (int)this.stretchDepthPointToScreen(leftHandPoint).X / 2 + offset;
-                                if(this.queueSeed(seedPoint, Colors.Red)){
-                                    this.lastSeededLeft[screenCounter] = seedPoint;
-                                }
-                                this.currentlySeedingLeft[screenCounter] = true;
-                                this.blinkTriggerAreaToggle(false);
+                                leftHandPoint = SkeletonPointToScreen(leftHand.Position);
+                                this.leftHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint), offset));
                             }
-                        }
-                        else
-                        {
-                            this.stopGrowing(this.lastSeededLeft[screenCounter]);
-                            this.currentlySeedingLeft[screenCounter] = false;
-                        }
 
+                            if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.windowHeight * 0.9)
+                            {
+                                if (!this.currentlySeedingRight[screenCounter])
+                                {
+                                    Console.WriteLine("seeding for right hand on skel " + screenCounter);
+                                    //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
+                                    int seedPoint = (int)this.stretchDepthPointToScreen(rightHandPoint).X / 2 + offset;
+                                    if (this.queueSeed(seedPoint, Colors.Red))
+                                    {
+                                        this.lastSeededRight[screenCounter] = seedPoint;
+                                    }
+                                    this.currentlySeedingRight[screenCounter] = true;
+                                    this.blinkTriggerAreaToggle(false);
+                                }
+                            }
+                            else
+                            {
+                                stopGrowing(this.lastSeededRight[screenCounter]);
+                                this.currentlySeedingRight[screenCounter] = false;
+                            }
+
+                            if (leftHandPoint != null && this.stretchDepthPointToScreen(leftHandPoint).Y > this.windowHeight * 0.9)
+                            {
+
+                                if (!this.currentlySeedingLeft[screenCounter])
+                                {
+                                    Console.WriteLine("seeding for left hand on skel " + screenCounter);
+                                    //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
+                                    int seedPoint = (int)this.stretchDepthPointToScreen(leftHandPoint).X / 2 + offset;
+                                    if (this.queueSeed(seedPoint, Colors.Red))
+                                    {
+                                        this.lastSeededLeft[screenCounter] = seedPoint;
+                                    }
+                                    this.currentlySeedingLeft[screenCounter] = true;
+                                    this.blinkTriggerAreaToggle(false);
+                                }
+                            }
+                            else
+                            {
+                                this.stopGrowing(this.lastSeededLeft[screenCounter]);
+                                this.currentlySeedingLeft[screenCounter] = false;
+                            }
                         // wenn beide Hände erkannt wurden, zusätzlich Mittelpunkt zwischen den Händen anzeigen
 
                         /*if (leftHandPoint != null && rightHandPoint != null)
