@@ -1112,7 +1112,7 @@ namespace StarFlowers
             while (plantThreadRunning)
             {
                 Dispatcher.Invoke(DispatcherPriority.Send, new Action(doActualPlantDrawing));
-
+                Dispatcher.Invoke(DispatcherPriority.Send, new Action(doFrameCalculation));
                 Thread.Sleep(30);
             }
         }
@@ -1445,7 +1445,7 @@ namespace StarFlowers
 
             } // end for screencounter-loop
 
-            this.doFrameCalculation();
+            
         }
 
     }
