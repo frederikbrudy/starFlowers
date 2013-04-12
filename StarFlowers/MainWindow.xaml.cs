@@ -684,7 +684,7 @@ namespace StarFlowers
                 currentSprite.Source = this.spriteImages[currentPlant.SpriteIndex % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
                 if (currentPlant.IsGrowing && currentSprite.Height < spriteHeight)
                 {
-                    currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 2, currentSprite.Margin.Top - 4, 0, 0);
+                    currentSprite.Margin = new Thickness(currentSprite.Margin.Left, currentSprite.Margin.Top - 4, 0, 0);
                     currentSprite.Height = currentSprite.Height + 4;
                     if (currentSprite.Height >= spriteHeight)
                     {
@@ -695,7 +695,7 @@ namespace StarFlowers
                 {
                     if (currentSprite.Height > 10)
                     {
-                        currentSprite.Margin = new Thickness(currentSprite.Margin.Left + 1, currentSprite.Margin.Top + 2, 0, 0);
+                        currentSprite.Margin = new Thickness(currentSprite.Margin.Left, currentSprite.Margin.Top + 2, 0, 0);
                         currentSprite.Height = currentSprite.Height - 2;
                     }
                     else
@@ -713,7 +713,7 @@ namespace StarFlowers
                 //        currentPlant.IsWithering = true;
                 //    }
                 //}
-                if (this.xOffsetDiff != 0)
+                if (this.xOffsetDiff != 0 && !currentPlant.IsGrowing)
                 {
                     //aply the offset
                     currentSprite.Margin = new Thickness(currentSprite.Margin.Left + xOffsetDiff, currentSprite.Margin.Top, 0, 0);
@@ -1298,7 +1298,7 @@ namespace StarFlowers
                 this.handCenterPoints[screenCounter].Clear();
                 this.playerCenterPoints[screenCounter].Clear();
 
-                int offset = (screenCounter == 0) ? (0) : ((int)this.windowWidth / 2);
+                int offset = (screenCounter == 1) ? (0) : ((int)this.windowWidth / 2);
 
                 bool skeletonTracked = false;
                 Skeleton skeleton = new Skeleton();
