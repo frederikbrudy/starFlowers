@@ -158,12 +158,12 @@ namespace StarFlowers
         /// <summary>
         /// width of a single sprite frame
         /// </summary>
-        int spriteWidth = 150;
+        const int spriteWidth = 150;
 
         /// <summary>
         /// height of a single sprite frame
         /// </summary>
-        int spriteHeight = 480;
+        const int spriteHeight = 480;
 
         /// <summary>
         /// the array which holds all sprite images. first index shows references an individual sprite animation, 
@@ -345,8 +345,8 @@ namespace StarFlowers
         private void addSpriteContainer()
         {
             Image img = new Image();
-            img.Width = this.spriteWidth;
-            img.Height = this.spriteHeight;
+            img.Width = spriteWidth;
+            img.Height = spriteHeight;
             img.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
             img.VerticalAlignment = System.Windows.VerticalAlignment.Top;
             Plant tempPlant = new Plant(img, spriteIndexGlobal++);
@@ -419,7 +419,7 @@ namespace StarFlowers
                     Plant tempPlant = this.availableSpriteContainers[0];
                     Image spriteImg = tempPlant.Img;
                     this.availableSpriteContainers.RemoveAt(0);
-                    spriteImg.Margin = new Thickness(xPos, this.Height, 0, 0);
+                    spriteImg.Margin = new Thickness(xPos, this.windowHeight, 0, 0);
                     spriteImg.Height = 0;
                     //Random rand = new Random();
                     double opacity = random.NextDouble() + 0.25;
@@ -636,8 +636,8 @@ namespace StarFlowers
             if (this.currentFrameCount % 120 == 0 && this.xOffset <= 0)
             {
                 //every 120 frames: set random offset to left or right
-                this.xOffset = random.Next(300);
-                this.xOffset = 150 - this.xOffset;
+                this.xOffset = random.Next(100);
+                this.xOffset = 50 - this.xOffset;
             }
 
             if (this.currentFrameCount % 2 == 0)
@@ -673,11 +673,11 @@ namespace StarFlowers
                 Image currentSprite = currentPlant.Img;
                 //currentSprite.Source = this.spriteImages[spriteCount % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
                 currentSprite.Source = this.spriteImages[currentPlant.SpriteIndex % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
-                if (currentPlant.IsGrowing && currentSprite.Height < this.spriteHeight)
+                if (currentPlant.IsGrowing && currentSprite.Height < spriteHeight)
                 {
                     currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 1, currentSprite.Margin.Top - 2, 0, 0);
                     currentSprite.Height = currentSprite.Height + 2;
-                    if (currentSprite.Height >= this.spriteHeight)
+                    if (currentSprite.Height >= spriteHeight)
                     {
                         currentPlant.IsGrowing = false;
                     }
@@ -1063,15 +1063,12 @@ namespace StarFlowers
 
             //Console.WriteLine(this.FlowerGrid.Height);
 
-            Color centerColor = Colors.LightGray;
-            Color midColor = Colors.DarkGray;
-            Color endColor = Colors.Gray;
+            Color startColor = Colors.DarkGreen; //LightGray
+            Color midColor = Colors.DarkGreen; //DarkGray
+            Color endColor = Colors.Black; //Gray
             RadialGradientBrush b = new RadialGradientBrush();
-            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, centerColor.R, centerColor.G, centerColor.B), 0.15));
-            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, midColor.R, midColor.G, midColor.B), 0.5));
+            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, startColor.R, startColor.G, startColor.B), 0.05));
             b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, endColor.R, endColor.G, endColor.B), 1.0));
-            //this.OverlayImage0.Opacity = 0;
-            //this.OverlayImage1.Opacity = 0;
             this.Background = b;
         }
 
@@ -1134,7 +1131,7 @@ namespace StarFlowers
                 if (!this.trackingSkeleton)
                 {
                     //not tracking skel. should spawn at body center
-                    this.spawnThosePoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
+                    this.spawnThoseBodyPoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
                 }
                 this.spawnThosePoints(this.rightHandPoints[screenCounter], this.colorRightHand);
                 this.spawnThosePoints(this.leftHandPoints[screenCounter], this.colorLeftHand);
@@ -1193,6 +1190,19 @@ namespace StarFlowers
                 {
                     //for everything else
                     pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble(), particleLifeMultiplier * random.NextDouble());
+                }
+            }
+        }
+
+        private void spawnThoseBodyPoints(List<Point3D> list, System.Windows.Media.Color color)
+        {
+            foreach (Point3D point in list)
+            {
+                //spawn the points
+                if (point.X > 0.01 || point.X < -0.01)
+                {
+                    //for everything else
+                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble() * 5, particleLifeMultiplier * random.NextDouble());
                 }
             }
         }
@@ -1404,7 +1414,6 @@ namespace StarFlowers
 
                         if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.windowHeight * 0.9)
                         {
-                   
                             if (!this.currentlySeedingRight[screenCounter])
                             {
                                 Console.WriteLine("seeding for right hand on skel " + screenCounter);
