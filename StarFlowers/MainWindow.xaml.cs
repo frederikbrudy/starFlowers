@@ -114,9 +114,9 @@ namespace StarFlowers
         System.Windows.Point rightHandPoint = new System.Windows.Point();
         System.Windows.Point leftHandPoint = new System.Windows.Point();
 
-        private System.Windows.Media.Color colorLeftHand = Colors.Yellow;
+        private System.Windows.Media.Color colorLeftHand = Colors.Orchid;
         private System.Windows.Media.Color colorRightHand = Colors.Blue;
-        private System.Windows.Media.Color colorBodyCenter = Colors.Red;
+        private System.Windows.Media.Color colorBodyCenter = Colors.Turquoise;
         private System.Windows.Media.Color colorMousePoint = Colors.Green;
         private System.Windows.Media.Color colorHandCenterPoint = Colors.Yellow;
         private System.Windows.Media.Brush brushLeftHand;
@@ -158,7 +158,7 @@ namespace StarFlowers
         /// <summary>
         /// width of a single sprite frame
         /// </summary>
-        int spriteWidth = 150;
+        int spriteWidth = 600;
 
         /// <summary>
         /// height of a single sprite frame
@@ -345,8 +345,8 @@ namespace StarFlowers
         private void addSpriteContainer()
         {
             Image img = new Image();
-            img.Width = spriteWidth;
-            img.Height = spriteHeight;
+            img.Width = 600;
+            img.Height = 480;
             img.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
             img.VerticalAlignment = System.Windows.VerticalAlignment.Top;
             Plant tempPlant = new Plant(img, spriteIndexGlobal++);
@@ -636,8 +636,8 @@ namespace StarFlowers
             if (this.currentFrameCount % 120 == 0 && this.xOffset <= 0)
             {
                 //every 120 frames: set random offset to left or right
-                this.xOffset = random.Next(60);
-                this.xOffset = 30 - this.xOffset;
+                this.xOffset = random.Next(300);
+                this.xOffset = 150 - this.xOffset;
             }
 
             if (this.currentFrameCount % 2 == 0)
@@ -979,7 +979,7 @@ namespace StarFlowers
 
             pm = new ParticleSystemManager();
 
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem*2, this.colorBodyCenter));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorBodyCenter));
 
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorLeftHand));
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorRightHand));
@@ -1130,7 +1130,7 @@ namespace StarFlowers
                 if (!this.trackingSkeleton)
                 {
                     //not tracking skel. should spawn at body center
-                    this.spawnThoseBodyPoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
+                    this.spawnThosePoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
                 }
                 this.spawnThosePoints(this.rightHandPoints[screenCounter], this.colorRightHand);
                 this.spawnThosePoints(this.leftHandPoints[screenCounter], this.colorLeftHand);
@@ -1189,19 +1189,6 @@ namespace StarFlowers
                 {
                     //for everything else
                     pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble(), particleLifeMultiplier * random.NextDouble());
-                }
-            }
-        }
-
-        private void spawnThoseBodyPoints(List<Point3D> list, System.Windows.Media.Color color)
-        {
-            foreach (Point3D point in list)
-            {
-                //spawn the points
-                if (point.X > 0.01 || point.X < -0.01)
-                {
-                    //for everything else
-                    pm.SpawnParticle(point, 20.0, color, particleSizeMultiplier * random.NextDouble(), particleLifeMultiplier * random.NextDouble());
                 }
             }
         }
@@ -1286,7 +1273,7 @@ namespace StarFlowers
                 this.leftHandPoints[screenCounter].Clear();
                 this.handCenterPoints[screenCounter].Clear();
                 this.playerCenterPoints[screenCounter].Clear();
-                int offset = (screenCounter == 1) ? (0) : ((int)this.windowWidth / 2);
+                int offset = (screenCounter == 0) ? (0) : ((int)this.windowWidth / 2);
 
                 bool skeletonTracked = false;
                 Skeleton skeleton = new Skeleton();

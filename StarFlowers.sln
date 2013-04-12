@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio Express 2012 for Windows Desktop
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarFlowers", "StarFlowers\StarFlowers.csproj", "{C0629464-2E91-4322-8B46-BD961F9F429A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6F5E40FD-6F66-441E-B5CA-F63282B621D8} = {6F5E40FD-6F66-441E-B5CA-F63282B621D8}
@@ -26,5 +26,4 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-
 EndGlobal

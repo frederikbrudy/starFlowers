@@ -19,13 +19,13 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Image x:Name="OverlayImage0" HorizontalAlignment="Left" Stretch="Fill" Grid.Row="0" Grid.Column="1"  />
-            <Image x:Name="OverlayImage1" HorizontalAlignment="Right" Stretch="Fill" Grid.Row="0" Grid.Column="0" />
+            <Image x:Name="OverlayImage0" HorizontalAlignment="Left" Stretch="Fill" Grid.Row="0" Grid.Column="0"  />
+            <Image x:Name="OverlayImage1" HorizontalAlignment="Right" Stretch="Fill" Grid.Row="0" Grid.Column="1" />
         </Grid>
 
 
-        <Image x:Name="HeadTrackedImage0" Width="50" Height="120" Stretch="Fill" HorizontalAlignment="Right" VerticalAlignment="Top" />
-        <Image x:Name="HeadTrackedImage1" Width="50" Height="120" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Image x:Name="HeadTrackedImage0" Width="50" Height="120" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Image x:Name="HeadTrackedImage1" Width="50" Height="120" Stretch="Fill" HorizontalAlignment="Right" VerticalAlignment="Top" />
         <Viewport3D Name="World" Width="1366" Height="768"> <!-- 1706 1366-->
             <Viewport3D.Camera>
                 <OrthographicCamera Position="0,0,1" LookDirection="0,0,-1" UpDirection="0,1,0" Width="1366" x:Name="Camera"/><!-- 3412 1706 1366-->
@@ -47,13 +47,13 @@
             </ModelVisual3D.Content>
         </ModelVisual3D>-->
         <DockPanel Background="#01000000">
-            <Label Visibility="Visible" Name="FrameRateLabel" DockPanel.Dock="Top" Foreground="Yellow" Content="FPS: 0" Opacity="1"/>
+            <Label Visibility="Visible" Name="FrameRateLabel" DockPanel.Dock="Top" Foreground="Yellow" Content="FPS: 0"/>
         </DockPanel>
         <!--<Image Name="MouseImage"></Image>-->
         <Canvas Name="FlowerGrid" HorizontalAlignment="Left" VerticalAlignment="Top">
         </Canvas>
         <Rectangle Name="TriggerArea" HorizontalAlignment="Left" VerticalAlignment="Top" 
-                   Fill="Aquamarine" Height="60" Width="1000" Opacity="0.0">
+                   Fill="Aquamarine" Height="48" Width="1000" Opacity="0.0">
 
         </Rectangle>
     </Grid>
