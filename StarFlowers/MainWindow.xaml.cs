@@ -636,8 +636,8 @@ namespace StarFlowers
             if (this.currentFrameCount % 120 == 0 && this.xOffset <= 0)
             {
                 //every 120 frames: set random offset to left or right
-                this.xOffset = random.Next(300);
-                this.xOffset = 150 - this.xOffset;
+                this.xOffset = random.Next(60);
+                this.xOffset = 30 - this.xOffset;
             }
 
             if (this.currentFrameCount % 2 == 0)
@@ -1273,7 +1273,7 @@ namespace StarFlowers
                 this.leftHandPoints[screenCounter].Clear();
                 this.handCenterPoints[screenCounter].Clear();
                 this.playerCenterPoints[screenCounter].Clear();
-                int offset = (screenCounter == 0) ? (0) : ((int)this.windowWidth / 2);
+                int offset = (screenCounter == 1) ? (0) : ((int)this.windowWidth / 2);
 
                 bool skeletonTracked = false;
                 Skeleton skeleton = new Skeleton();
