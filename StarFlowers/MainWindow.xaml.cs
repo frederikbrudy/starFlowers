@@ -253,7 +253,8 @@ namespace StarFlowers
         private bool[] currentlySeedingLeft;
         private bool[] currentlySeedingRight;
         private bool[] growingPlants;
-        private DateTime lastWithered;
+        private double headDiff;
+        private bool showHead;
 
         /*
          * end flower area
@@ -489,6 +490,38 @@ namespace StarFlowers
                 }
 
                 this.TriggerArea.Opacity += this.triggerDiff;
+            }
+        }
+
+        //private void headAreaFadeToggle()
+        //{
+        //    this.headFading = !this.headFading;
+        //}
+
+        private void fadeHeadArea() {
+            if (this.showHead)
+            {
+                //fade in
+                foreach (Image head in this.HeadTrackingImages)
+                {
+                    if (head.Opacity < 1.0)
+                    {
+                        this.headDiff = 0.025;
+                        head.Opacity += this.headDiff;
+                    }
+                }
+            }
+            else
+            {
+                //fade out
+                foreach (Image head in this.HeadTrackingImages)
+                {
+                    if (head.Opacity > 0.0)
+                    {
+                        this.headDiff = -0.025;
+                        head.Opacity += this.headDiff;
+                    }
+                }
             }
         }
 
@@ -1132,6 +1165,7 @@ namespace StarFlowers
             this.doFrameCounter();
 
             this.fadeTriggerArea();
+            this.fadeHeadArea();
 
             if (alertBlinking && this.alertBlinkingSeconds > 0)
             {
@@ -1430,6 +1464,7 @@ namespace StarFlowers
                         distanzKopfZuHals = euklDistanz(kopfX, kopfY, halsX, halsY);
 
                         HeadTrackingImages[screenCounter].Source = GetCroppedImage(screenCounter, colorStream, kopfXPos, kopfYPos, distanzKopfZuHals * 2);
+                        showHead = true;
                     }
 
 
@@ -1488,6 +1523,7 @@ namespace StarFlowers
                 {
                     //if withering should occur, then do it.
                     this.witherAllPlants();
+                    this.showHead = false;
                 }
             }
         }
