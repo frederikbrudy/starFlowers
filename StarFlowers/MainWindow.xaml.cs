@@ -636,8 +636,8 @@ namespace StarFlowers
             if (this.currentFrameCount % 120 == 0 && this.xOffset <= 0)
             {
                 //every 120 frames: set random offset to left or right
-                this.xOffset = random.Next(300);
-                this.xOffset = 150 - this.xOffset;
+                this.xOffset = random.Next(100);
+                this.xOffset = 50 - this.xOffset;
             }
 
             if (this.currentFrameCount % 2 == 0)
@@ -1134,7 +1134,7 @@ namespace StarFlowers
                 if (!this.trackingSkeleton)
                 {
                     //not tracking skel. should spawn at body center
-                    this.spawnThosePoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
+                    this.spawnThoseBodyPoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
                 }
                 this.spawnThosePoints(this.rightHandPoints[screenCounter], this.colorRightHand);
                 this.spawnThosePoints(this.leftHandPoints[screenCounter], this.colorLeftHand);
@@ -1193,6 +1193,19 @@ namespace StarFlowers
                 {
                     //for everything else
                     pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble(), particleLifeMultiplier * random.NextDouble());
+                }
+            }
+        }
+
+        private void spawnThoseBodyPoints(List<Point3D> list, System.Windows.Media.Color color)
+        {
+            foreach (Point3D point in list)
+            {
+                //spawn the points
+                if (point.X > 0.01 || point.X < -0.01)
+                {
+                    //for everything else
+                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble() * 5, particleLifeMultiplier * random.NextDouble());
                 }
             }
         }
