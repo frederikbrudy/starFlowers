@@ -377,15 +377,14 @@ namespace StarFlowers
             this.numberFrames = this.ximages * this.yimages;
             for (int spriteCount = 0; spriteCount < spriteFilenames.Length; spriteCount++)
             {
-                Console.WriteLine("loading image folder: " + spriteFilenames[spriteCount]);
+                //Console.WriteLine("loading image folder: " + spriteFilenames[spriteCount]);
                 string[] files = Directory.GetFiles(spriteFilenames[spriteCount]);
                 for (int frameCount = 0; frameCount < files.Length; frameCount++)
                 {
                     String file = files[frameCount];
-                    Console.WriteLine("file: " + file);
                     this.spriteImages[spriteCount, frameCount] = new BitmapImage(new Uri(file));
                 }
-                Console.WriteLine("loading done");
+                //Console.WriteLine("loading done");
             }
         }
 
@@ -913,6 +912,10 @@ namespace StarFlowers
             else if (e.Key.Equals(System.Windows.Input.Key.G))
             {
                 this.blinkAlert(3);
+            }
+            else if (e.Key.Equals(System.Windows.Input.Key.S))
+            {
+                this.TakeScreenshot();
             }
             else if (e.Key.Equals(System.Windows.Input.Key.T))
             {
@@ -1515,6 +1518,30 @@ namespace StarFlowers
                     this.blinkTriggerAreaToggle(false);
                 }
             }
+        }
+
+        private void TakeScreenshot()
+        {
+            // create a png bitmap encoder which knows how to save a .png file
+
+            System.Drawing.Bitmap image = new System.Drawing.Bitmap((int)this.windowWidth, (int)this.windowHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(image);
+            g.CopyFromScreen(0, 0, 0, 0,
+                     new System.Drawing.Size((int)this.windowWidth, (int)this.windowHeight),
+                     System.Drawing.CopyPixelOperation.SourceCopy);
+
+            //only filename construction
+            string time =
+                System.DateTime.Now.ToString("hh'-'mm'-'ss",
+                System.Globalization.CultureInfo.CurrentUICulture.DateTimeFormat);
+            string myPhotos =
+                Environment.GetFolderPath(
+                Environment.SpecialFolder.MyPictures);
+            string path = System.IO.Path.Combine(
+                myPhotos, "KinectSnapshot-" + time + ".png");
+
+            image.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+
         }
 
     }
