@@ -118,21 +118,23 @@ namespace MultiProcessKinect
                     skeletons = trackedSkeletons.ToArray();
                     byte[] toSend = new byte[2255]; // 2255 byte ist die Laenge eines serialisierten Skeletons
 
+                    
+                    if (skeletons.Length > 0)
+                    {
+                        skeleton = skeletons[0]; // erstes Skelett nehmen...
+                        toSend = ObjectToByteArray(skeleton); // ...und serialisieren
+                        skeletonFound = true;
+                    }
+                    else // wenn kein Skeleton getracked wurde, schickt er nur Nullen
+                    {
+                        for (int i = 0; i < toSend.Length; i++)
+                        {
+                            toSend[i] = 0;
+                        }
+                    }
+
                     try
                     {
-                        if (skeletons.Length > 0)
-                        {
-                            skeleton = skeletons[0]; // erstes Skelett nehmen...
-                            toSend = ObjectToByteArray(skeleton); // ...und serialisieren
-                            skeletonFound = true;
-                        }
-                        else // wenn kein Skeleton getracked wurde, schickt er nur Nullen
-                        {
-                            for (int i = 0; i < toSend.Length; i++)
-                            {
-                                toSend[i] = 0;
-                            }
-                        }
                         mutex.WaitOne(); // blockt den Zugriff
                         skeletonWriter.WriteArray<byte>(0, toSend, 0, toSend.Length); // schickt es weg
                         mutex.ReleaseMutex(); // gibt den Zugriff frei
@@ -157,7 +159,7 @@ namespace MultiProcessKinect
                         {
                             mutex = Mutex.OpenExisting("mappedfilemutex");
                             mutex.WaitOne(); // blockt den Zugriff
-                            depthWriter.WriteArray<DepthImagePixel>(0, depthPixels, 0, depthPixels.Length); // schickt es weg                        
+                            depthWriter.WriteArray<DepthImagePixel>(0, depthPixels, 0, depthPixels.Length); // schickt es weg            
                             mutex.ReleaseMutex(); // gibt den Zugriff frei
                         }
                         catch (Exception ex)
@@ -175,7 +177,6 @@ namespace MultiProcessKinect
                     if (null != colorFrame)
                     {
                         colorFrame.CopyPixelDataTo(colorPixels);
-
                         try
                         {
                             mutex = Mutex.OpenExisting("mappedfilemutex");

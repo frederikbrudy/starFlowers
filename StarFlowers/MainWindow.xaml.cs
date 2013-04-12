@@ -297,10 +297,6 @@ namespace StarFlowers
         /// </summary>
         private void initSprites()
         {
-            //frameTimer = new System.Windows.Threading.DispatcherTimer();
-            //frameTimer.Tick += OnFrame;
-            //frameTimer.Interval = TimeSpan.FromSeconds(1.0 / frameTime);
-
             String path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase) + "\\..\\..\\Images\\";
             path = path.Substring(6);
             String[] spriteFilenames = new String[5];
@@ -419,8 +415,6 @@ namespace StarFlowers
                     opacity = (opacity > 0.9) ? (0.75) : opacity;
                     spriteImg.Opacity = opacity;
                     this.activePlants.Add(tempPlant);
-
-                    //in onFrame: grow only plants in the growing list.
                 }
                 this.seedPosition.Clear();
                 this.seedColor.Clear();
@@ -750,15 +744,13 @@ namespace StarFlowers
                     // ------------- Skeleton holen ------------------                            
                     try
                     {
+                        var receivedSkeletonBytes = new byte[SkeletonObjektByteLength]; // Byte-Array mit Laenge von serialized Skeleton
                         mutex = Mutex.OpenExisting("mappedfilemutex");
                         mutex.WaitOne(); // sichert alleinigen Zugriff
-
-                        var receivedSkeletonBytes = new byte[SkeletonObjektByteLength]; // Byte-Array mit Laenge von serialized Skeleton
                         accessor = skeletonFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
                         accessor.ReadArray<byte>(0, receivedSkeletonBytes, 0, receivedSkeletonBytes.Length); // liest Nachricht von Konsolenanwendung
-
+                        mutex.ReleaseMutex(); // gibt Mutex wieder frei
                         receivedSkeleton[x] = ByteArrayToObject(receivedSkeletonBytes); // wandelt sie in Object oder null um
-
                         //if (receivedSkeleton != null)
                         //{
                         //    Console.WriteLine("Tracking ID:   " + ((Skeleton)receivedSkeleton[x]).TrackingId);
@@ -768,9 +760,6 @@ namespace StarFlowers
                         //    Console.WriteLine("Kein Skeleton empfangen!");
                         //}
                         //Console.WriteLine("------------");
-
-                        mutex.ReleaseMutex(); // gibt Mutex wieder frei
-
                     }
                     catch (Exception ex)
                     {
@@ -786,10 +775,9 @@ namespace StarFlowers
                         // ------------- DepthStream holen ------------------
                         try
                         {
+                            receivedDepthPixels[x] = new DepthImagePixel[307200]; // 307200 = 640 x 480
                             mutex = Mutex.OpenExisting("mappedfilemutex");
                             mutex.WaitOne();
-                            receivedDepthPixels[x] = new DepthImagePixel[307200]; // 307200 = 640 x 480
-
                             accessor = depthFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
                             accessor.ReadArray<DepthImagePixel>(0, receivedDepthPixels[x], 0, receivedDepthPixels[x].Length); // liest Nachricht von Konsolenanwendung
                             mutex.ReleaseMutex();
@@ -812,14 +800,12 @@ namespace StarFlowers
                     {
                         try
                         {
+                            receivedColorStream[x] = new byte[ColorAndDepthPixelArrayByteLength]; // Byte-Array mit Laenge von serialized Skeleton
                             mutex = Mutex.OpenExisting("mappedfilemutex");
                             mutex.WaitOne();
-                            receivedColorStream[x] = new byte[ColorAndDepthPixelArrayByteLength]; // Byte-Array mit Laenge von serialized Skeleton
                             accessor = colorFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
                             accessor.ReadArray<byte>(0, receivedColorStream[x], 0, receivedColorStream[x].Length); // liest Nachricht von Konsolenanwendung
-
                             mutex.ReleaseMutex();
-
                         }
                         catch (Exception ex)
                         {
@@ -875,7 +861,6 @@ namespace StarFlowers
             else if (e.Key.Equals(System.Windows.Input.Key.G))
             {
                 this.blinkAlert(3);
-
             }
             else if (e.Key.Equals(System.Windows.Input.Key.T))
             {
@@ -937,11 +922,6 @@ namespace StarFlowers
         /// </summary>
         private void initParticleSystem()
         {
-            //frameTimer = new System.Windows.Threading.DispatcherTimer();
-            //frameTimer.Tick += OnFrame;
-            //frameTimer.Interval = TimeSpan.FromSeconds(1.0 / 60.0);
-            //frameTimer.Start();
-
             //this.spawnPoints = new Dictionary<Color,Point3D>();
             this.lastTick = Environment.TickCount;
 
@@ -955,7 +935,6 @@ namespace StarFlowers
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorHandCenterPoint));
 
             random = new Random();
-
             
             for(int i = 0; i < this.handCenterThicknesses.Length; i++){
                 this.playerCenterPoints[i] = new List<Point3D>();
@@ -1063,11 +1042,6 @@ namespace StarFlowers
             colorBitmaps[1] = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgr32, null);
             OverlayImages[0].Source = colorBitmaps[0];
             OverlayImages[1].Source = colorBitmaps[1];
-        }
-
-        private void OnFrame(object sender, EventArgs e)
-        {
-            this.doFrameCalculation();
         }
 
         private void doFrameCalculation()
@@ -1379,8 +1353,6 @@ namespace StarFlowers
                     }
 
                     // Head tracking, wenn Skeleton verfügbar
-
-
                     Joint halsJoint = skeleton.Joints[JointType.ShoulderCenter];
                     Joint kopfJoint = skeleton.Joints[JointType.Head];
                     if (
