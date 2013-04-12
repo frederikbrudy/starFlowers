@@ -27,6 +27,8 @@ namespace StarFlowers
         private int spriteIndex;
         private DateTime grownCompletedTime;
 
+        private int plantId;
+
         //private int aliveSeconds;
 
 
@@ -34,6 +36,18 @@ namespace StarFlowers
         {
             this.img = img; 
             this.spriteIndex = spriteIndex;
+        }
+
+        public int PlantId
+        {
+            get
+            {
+                return this.plantId;
+            }
+            set
+            {
+                this.plantId = value;
+            }
         }
 
         public int SpriteIndex

@@ -252,6 +252,8 @@ namespace StarFlowers
         private const int frameTime = 30;
         private bool[] currentlySeedingLeft;
         private bool[] currentlySeedingRight;
+        private int[] lastSeededRight;
+        private int[] lastSeededLeft;
         private bool[] growingPlants;
         private double headDiff;
         private bool showHead;
@@ -336,6 +338,9 @@ namespace StarFlowers
             currentlySeedingLeft = new bool[sensors.Count];
             currentlySeedingRight = new bool[sensors.Count];
 
+            lastSeededRight = new int[sensors.Count];
+            lastSeededLeft = new int[sensors.Count];
+
             this.growingPlants = new bool[sensors.Count];
         }
 
@@ -417,6 +422,7 @@ namespace StarFlowers
                     //remove from the waiting list
 
                     Plant tempPlant = this.availableSpriteContainers[0];
+                    tempPlant.PlantId = xPos;
                     Image spriteImg = tempPlant.Img;
                     this.availableSpriteContainers.RemoveAt(0);
                     spriteImg.Margin = new Thickness(xPos, this.windowHeight, 0, 0);
@@ -438,7 +444,7 @@ namespace StarFlowers
         /// </summary>
         /// <param name="positionX">the horizontal seeding position</param>
         /// <param name="color">the plants color</param>
-        private void queueSeed(int positionX, Color color)
+        private bool queueSeed(int positionX, Color color)
         {
             int futurePlantCount = this.activePlants.Count + this.seedPosition.Count + 1;
             if (this.availableSpriteContainers.Count < futurePlantCount //there are not enough containers for all future plants
@@ -453,7 +459,9 @@ namespace StarFlowers
                 //only seed plant if there are any seeding spots (meaning sprites) left
                 this.seedPosition.Add(positionX);
                 this.seedColor.Add(color);
+                return true;
             }
+            return false;
         }
 
         private void blinkAlert(int seconds)
@@ -1418,13 +1426,17 @@ namespace StarFlowers
                             {
                                 Console.WriteLine("seeding for right hand on skel " + screenCounter);
                                 //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-                                this.queueSeed((int)this.stretchDepthPointToScreen(rightHandPoint).X / 2 + offset, Colors.Red);
+                                int seedPoint = (int)this.stretchDepthPointToScreen(rightHandPoint).X / 2 + offset;
+                                if(this.queueSeed(seedPoint, Colors.Red)){
+                                    this.lastSeededRight[screenCounter] = seedPoint;
+                                }
                                 this.currentlySeedingRight[screenCounter] = true;
                                 this.blinkTriggerAreaToggle(false);
                             }
                         }
                         else
                         {
+                            stopGrowing(this.lastSeededRight[screenCounter]);
                             this.currentlySeedingRight[screenCounter] = false;
                         }
 
@@ -1435,13 +1447,17 @@ namespace StarFlowers
                             {
                                 Console.WriteLine("seeding for left hand on skel " + screenCounter);
                                 //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-                                this.queueSeed((int)this.stretchDepthPointToScreen(leftHandPoint).X / 2 + offset, Colors.Red);
+                                int seedPoint = (int)this.stretchDepthPointToScreen(leftHandPoint).X / 2 + offset;
+                                if(this.queueSeed(seedPoint, Colors.Red)){
+                                    this.lastSeededLeft[screenCounter] = seedPoint;
+                                }
                                 this.currentlySeedingLeft[screenCounter] = true;
                                 this.blinkTriggerAreaToggle(false);
                             }
                         }
                         else
                         {
+                            this.stopGrowing(this.lastSeededLeft[screenCounter]);
                             this.currentlySeedingLeft[screenCounter] = false;
                         }
 
@@ -1525,6 +1541,17 @@ namespace StarFlowers
                     this.witherAllPlants();
                     this.showHead = false;
                     this.blinkTriggerAreaToggle(false);
+                }
+            }
+        }
+
+        private void stopGrowing(int plantId)
+        {
+            for (int i = 0; i < this.activePlants.Count; i++)
+            {
+                if (this.activePlants[i].PlantId == plantId)
+                {
+                    this.activePlants[i].IsGrowing = false;
                 }
             }
         }
