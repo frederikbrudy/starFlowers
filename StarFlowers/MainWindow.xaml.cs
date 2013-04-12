@@ -491,12 +491,16 @@ namespace StarFlowers
 
                 this.TriggerArea.Opacity += this.triggerDiff;
             }
-        }
+            else
+            {
+                if (this.TriggerArea.Opacity > 0.0)
+                {
+                    this.triggerDiff = -0.05;
+                    this.TriggerArea.Opacity += this.triggerDiff;
+                }
 
-        //private void headAreaFadeToggle()
-        //{
-        //    this.headFading = !this.headFading;
-        //}
+            }
+        }
 
         private void fadeHeadArea() {
             if (this.showHead)
@@ -1363,9 +1367,15 @@ namespace StarFlowers
                         playerCenterPoint = new System.Windows.Point(0.0, 0.0);
                         this.growingPlants[screenCounter] = false;
                     }
+                    this.blinkTriggerAreaToggle(false);
                 }
                 else // Skeleton verfügbar
                 {
+                    if (this.activePlants.Count < 1)
+                    {
+                        this.blinkTriggerAreaToggle(true);
+                    }
+
                     if (skeleton.TrackingState == SkeletonTrackingState.PositionOnly)
                     {
                         // wenn nur Position vorhanden, dann diese als Mittelpunkt nehmen
@@ -1405,6 +1415,7 @@ namespace StarFlowers
                                 //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
                                 this.queueSeed((int)this.stretchDepthPointToScreen(rightHandPoint).X / 2 + offset, Colors.Red);
                                 this.currentlySeedingRight[screenCounter] = true;
+                                this.blinkTriggerAreaToggle(false);
                             }
                         }
                         else
@@ -1420,6 +1431,7 @@ namespace StarFlowers
                                 //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
                                 this.queueSeed((int)this.stretchDepthPointToScreen(leftHandPoint).X / 2 + offset, Colors.Red);
                                 this.currentlySeedingLeft[screenCounter] = true;
+                                this.blinkTriggerAreaToggle(false);
                             }
                         }
                         else
@@ -1524,6 +1536,7 @@ namespace StarFlowers
                     //if withering should occur, then do it.
                     this.witherAllPlants();
                     this.showHead = false;
+                    this.blinkTriggerAreaToggle(false);
                 }
             }
         }
