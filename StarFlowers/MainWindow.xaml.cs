@@ -325,7 +325,7 @@ namespace StarFlowers
             this.activePlants = new List<Plant>();
 
             this.spriteCountUnique = this.spriteImages.Length / this.numberFrames;
-            this.maximumPlantCount = this.spriteCountUnique * 1;
+            this.maximumPlantCount = this.spriteCountUnique * 4;
 
             //init seeds
             this.seedPosition = new List<int>();
@@ -1189,7 +1189,7 @@ namespace StarFlowers
                 if (point.X > 0.01 || point.X < -0.01)
                 {
                     //for everything else
-                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble(), particleLifeMultiplier * random.NextDouble());
+                    pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble() * 3, particleLifeMultiplier * random.NextDouble() / 2);
                 }
             }
         }

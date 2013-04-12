@@ -19,8 +19,8 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Image x:Name="OverlayImage0" HorizontalAlignment="Left" Stretch="Fill" Grid.Row="0" Grid.Column="0"  />
-            <Image x:Name="OverlayImage1" HorizontalAlignment="Right" Stretch="Fill" Grid.Row="0" Grid.Column="1" />
+            <Image x:Name="OverlayImage0" HorizontalAlignment="Left" Stretch="Fill" Grid.Row="0" Grid.Column="0" Opacity="0.6" />
+            <Image x:Name="OverlayImage1" HorizontalAlignment="Right" Stretch="Fill" Grid.Row="0" Grid.Column="1" Opacity="0.6" />
         </Grid>
 
 
