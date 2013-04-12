@@ -47,7 +47,7 @@
             </ModelVisual3D.Content>
         </ModelVisual3D>-->
         <DockPanel Background="#01000000">
-            <Label Visibility="Visible" Name="FrameRateLabel" DockPanel.Dock="Top" Foreground="Yellow" Content="FPS: 0"/>
+            <Label Visibility="Visible" Name="FrameRateLabel" DockPanel.Dock="Top" Foreground="Yellow" Content="FPS: 0" Opacity="1"/>
         </DockPanel>
         <!--<Image Name="MouseImage"></Image>-->
         <Canvas Name="FlowerGrid" HorizontalAlignment="Left" VerticalAlignment="Top">

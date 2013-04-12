@@ -114,9 +114,9 @@ namespace StarFlowers
         System.Windows.Point rightHandPoint = new System.Windows.Point();
         System.Windows.Point leftHandPoint = new System.Windows.Point();
 
-        private System.Windows.Media.Color colorLeftHand = Colors.Orchid;
+        private System.Windows.Media.Color colorLeftHand = Colors.Yellow;
         private System.Windows.Media.Color colorRightHand = Colors.Blue;
-        private System.Windows.Media.Color colorBodyCenter = Colors.Turquoise;
+        private System.Windows.Media.Color colorBodyCenter = Colors.Red;
         private System.Windows.Media.Color colorMousePoint = Colors.Green;
         private System.Windows.Media.Color colorHandCenterPoint = Colors.Yellow;
         private System.Windows.Media.Brush brushLeftHand;
@@ -979,7 +979,7 @@ namespace StarFlowers
 
             pm = new ParticleSystemManager();
 
-            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorBodyCenter));
+            this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem*2, this.colorBodyCenter));
 
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorLeftHand));
             this.WorldModels.Children.Add(pm.CreateParticleSystem(maxParticleCountPerSystem, this.colorRightHand));
@@ -1130,7 +1130,7 @@ namespace StarFlowers
                 if (!this.trackingSkeleton)
                 {
                     //not tracking skel. should spawn at body center
-                    this.spawnThosePoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
+                    this.spawnThoseBodyPoints(this.playerCenterPoints[screenCounter], this.colorBodyCenter);
                 }
                 this.spawnThosePoints(this.rightHandPoints[screenCounter], this.colorRightHand);
                 this.spawnThosePoints(this.leftHandPoints[screenCounter], this.colorLeftHand);
@@ -1189,6 +1189,19 @@ namespace StarFlowers
                 {
                     //for everything else
                     pm.SpawnParticle(point, 10.0, color, particleSizeMultiplier * random.NextDouble(), particleLifeMultiplier * random.NextDouble());
+                }
+            }
+        }
+
+        private void spawnThoseBodyPoints(List<Point3D> list, System.Windows.Media.Color color)
+        {
+            foreach (Point3D point in list)
+            {
+                //spawn the points
+                if (point.X > 0.01 || point.X < -0.01)
+                {
+                    //for everything else
+                    pm.SpawnParticle(point, 20.0, color, particleSizeMultiplier * random.NextDouble(), particleLifeMultiplier * random.NextDouble());
                 }
             }
         }
