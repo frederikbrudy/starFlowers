@@ -382,6 +382,7 @@ namespace StarFlowers
                 for (int frameCount = 0; frameCount < files.Length; frameCount++)
                 {
                     String file = files[frameCount];
+                    Console.WriteLine("file: " + file);
                     this.spriteImages[spriteCount, frameCount] = new BitmapImage(new Uri(file));
                 }
                 Console.WriteLine("loading done");
