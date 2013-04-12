@@ -159,9 +159,9 @@ namespace MultiProcessMain
 
                             if (
                                 (halsJoint.TrackingState == JointTrackingState.Tracked
-                              || halsJoint.TrackingState == JointTrackingState.Inferred)
+                              /*|| halsJoint.TrackingState == JointTrackingState.Inferred*/)
                               && (kopfJoint.TrackingState == JointTrackingState.Tracked
-                              || kopfJoint.TrackingState == JointTrackingState.Inferred))
+                              /*|| kopfJoint.TrackingState == JointTrackingState.Inferred*/))
                             {
 
                                //var p1 = this.SkeletonPointToScreen(halsJoint.Position).X;
@@ -179,10 +179,6 @@ namespace MultiProcessMain
 
                             // Testausgaben
                             Console.WriteLine("Tracking ID:   " + receivedSkel.TrackingId);
-                            //Console.WriteLine("Hash-Code:   " + receivedSkel.GetHashCode());
-                            //Console.WriteLine("Tracking State:   "+ receivedSkel.TrackingState);
-                            //var receivedSkelPos = receivedSkel.Position;
-                            //Console.WriteLine("Position:   " + receivedSkelPos.X + " " + receivedSkelPos.Y + " " + receivedSkelPos.Z);
                             Console.WriteLine("------------");
                         }
                         else
