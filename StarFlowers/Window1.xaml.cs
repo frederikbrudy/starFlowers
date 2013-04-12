@@ -10,7 +10,6 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
@@ -37,9 +36,6 @@ namespace StarFlowers
         /// </summary>
         int numberFrames = -1;
 
-        //int currentRow = 0;
-        //int currentColumn = 0;
-
         /// <summary>
         /// width of a single sprite frame
         /// </summary>
@@ -51,7 +47,8 @@ namespace StarFlowers
         int spriteHeight = 480;
 
         /// <summary>
-        /// the array which holds all sprite images. first index shows an individual sprite animation, second index points to each frame
+        /// the array which holds all sprite images. first index shows references an individual sprite animation, 
+        /// second index points to the frames in a specific animation
         /// </summary>
         BitmapSource[,] spriteImages;
 
@@ -80,12 +77,12 @@ namespace StarFlowers
         /// List of currently available (thus unassigned) sprite containers. there will be a maximum of maximumPlantCount containers 
         /// added to the application
         /// </summary>
-        List<Image> availableSpriteContainers;
+        List<Plant> availableSpriteContainers;
 
         /// <summary>
         /// list of sprite containers, which are currently in use. they will be redrawn on each frame
         /// </summary>
-        List<Image> activeSpriteContainers;
+        List<Plant> activePlants;
 
         /// <summary>
         /// maximum plant count, meaning the maximum sprite animations which is possible in this application
@@ -95,90 +92,109 @@ namespace StarFlowers
         /// <summary>
         /// number of currently available containers, indicating how many sprite containers are free to use.
         /// </summary>
-        private int currentlyAvailableContainersCount;
+        //private int currentlyAvailableContainersCount;
 
         /// <summary>
         /// number of how many different sprite animations there are. 
         /// </summary>
         private int spriteCountUnique;
 
-        Random random = new Random();
         private int xOffset;
+        
+        /// <summary>
+        /// indicates if the entire window should be flashing in different colors
+        /// </summary>
         private bool alertBlinking = false;
+
+        /// <summary>
+        /// indicates the length of the remaining countdown of the flashing window
+        /// </summary>
         private int alertBlinkingSeconds;
-        private bool triggerBlinking;
+        
+        /// <summary>
+        /// indicates whether the trigger area at the bottom of the screen should be flashing
+        /// </summary>
+        private bool triggerAreaBlinking;
         private double triggerDiff;
         private int xOffsetDiff;
+
+        /// <summary>
+        /// the list of soon to be removed plants. these plants will be removed on the next frame.
+        /// </summary>
+        private List<Plant> removeCandidates;
+
+        /// <summary>
+        /// indicates the global sprite counter, gives the next available sprite index for a new plant
+        /// </summary>
+        private int spriteIndexGlobal = 0;
+
+        Random random = new Random();
+        private bool resetAvailable;
+        private DateTime oldTime;
+        private const int frameTime = 30;
 
         public Window1()
         {
             InitializeComponent();
-
         }
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
             this.initSprites();
+            this.initTriggerArea();
+        }
+
+        /// <summary>
+        /// initializes / resets and repositions the trigger area to its default values.
+        /// </summary>
+        private void initTriggerArea()
+        {
             this.TriggerArea.Fill = ColorsAndBrushes.getBrushFromColorLinearGradient(Colors.Red);
+            this.TriggerArea.Opacity = 0.0;
+            this.TriggerArea.Width = this.Width;
             this.TriggerArea.Margin = new Thickness(0, this.Height - this.TriggerArea.Height, 0, 0);
         }
 
+        /// <summary>
+        /// initializes the sprites: loads the images, creates empty sprite containers, etc. 
+        /// </summary>
         private void initSprites()
         {
             frameTimer = new System.Windows.Threading.DispatcherTimer();
             frameTimer.Tick += OnFrame;
-            frameTimer.Interval = TimeSpan.FromSeconds(1.0 / 30.0);
+            frameTimer.Interval = TimeSpan.FromSeconds(1.0 / frameTime);
 
+            String path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase) + "\\..\\..\\Images\\";
+            path = path.Substring(6);
             String[] spriteFilenames = new String[5];
-            spriteFilenames[0] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Baum1/";
-            spriteFilenames[1] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Baum2/";
-            spriteFilenames[2] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Blume1/";
-            spriteFilenames[3] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Gras1/";
-            spriteFilenames[4] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/Gras2/";
-
-            //this.spriteFilenames[0] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/sprite_blume_1.png";
-            //this.spriteFilenames[1] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/sprite_gras_1.png";
-            //this.spriteFilenames[2] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/sprite_blume_1.png";
-            //this.spriteFilenames[3] = "C:/Users/Frederik/Dropbox/Uni/Kinect/src/starFlowers/StarFlowers/Images/sprite_blume_2.png";
+            spriteFilenames[0] = path + "Baum1\\";
+            spriteFilenames[1] = path + "Baum2\\";
+            spriteFilenames[2] = path + "Blume1\\";
+            spriteFilenames[3] = path + "Gras1\\";
+            spriteFilenames[4] = path + "Gras2\\";
 
             this.spriteImages = new BitmapSource[spriteFilenames.Length, ximages * yimages];
 
             this.createCroppedImages(spriteFilenames);
 
-            this.availableSpriteContainers = new List<Image>();
+            this.availableSpriteContainers = new List<Plant>();
 
             this.addSpriteContainer();
 
-            this.activeSpriteContainers = new List<Image>(); 
+            this.activePlants = new List<Plant>(); 
             
             this.spriteCountUnique = this.spriteImages.Length / this.numberFrames;
-            this.maximumPlantCount = this.spriteCountUnique * 4;
-            //this.currentlyAvailableContainers = this.availableSpriteContainers.Count;
+            this.maximumPlantCount = this.spriteCountUnique * 1;
 
             //init seeds
             this.seedPosition = new List<int>();
             this.seedColor = new List<Color>();
-        }
 
-        private void blinkAlert(int seconds)
-        {
-            this.alertBlinking = true;
-            this.alertBlinkingSeconds = seconds;
-            this.FlowerGrid.Width = this.Width;
-            this.FlowerGrid.Height = this.Height;
-            this.FlowerGrid.Background = Brushes.Red;
-
-            //TODO clear images and reset to default values
-
-        }
-
-        private void triggerAreaBlink(bool blinking)
-        {
-            this.triggerBlinking = blinking;
+            this.removeCandidates = new List<Plant>();
         }
 
         /// <summary>
-        /// adds a new image as a child to the main grid of the application
+        /// adds an empty image as a child to the main grid of the application
         /// </summary>
         private void addSpriteContainer()
         {
@@ -187,9 +203,9 @@ namespace StarFlowers
             img.Height = 480;
             img.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
             img.VerticalAlignment = System.Windows.VerticalAlignment.Top;
+            Plant tempPlant = new Plant(img, spriteIndexGlobal++);
             this.FlowerGrid.Children.Add(img);
-            this.availableSpriteContainers.Add(img);
-            this.currentlyAvailableContainersCount = this.currentlyAvailableContainersCount + this.availableSpriteContainers.Count;
+            this.availableSpriteContainers.Add(tempPlant);
         }
 
         /// <summary>
@@ -205,7 +221,8 @@ namespace StarFlowers
         }
 
         /// <summary>
-        /// loads the sprite images. the images must be organized in folders (one folder per sprite animation) numbered sequentially.
+        /// loads the sprite images. the images must be organized in folders (one folder per sprite animation) 
+        /// numbered sequentially.
         /// </summary>
         /// <param name="spriteFilenames">array of folder names (each with a trailing /)</param>
         private void createCroppedImages(String[] spriteFilenames)
@@ -214,7 +231,7 @@ namespace StarFlowers
             for (int spriteCount = 0; spriteCount < spriteFilenames.Length; spriteCount++)
             {
                 Console.WriteLine("loading image folder: " + spriteFilenames[spriteCount]);
-                string[] files = Directory.GetFiles(spriteFilenames[spriteCount]); //, SearchOption.AllDirectories
+                string[] files = Directory.GetFiles(spriteFilenames[spriteCount]);
                 for (int frameCount = 0; frameCount < files.Length; frameCount++)
                 {
                     String file = files[frameCount];
@@ -222,49 +239,18 @@ namespace StarFlowers
                 }
                 Console.WriteLine("loading done");
             }
+        }
 
-            /*
-            //creating sprites from spritesheet
-            for (int spriteCount = 0; spriteCount < this.spriteFilenames.Length; spriteCount++)
+        private void toggleFrameTimer(bool forceRunning)
+        {
+            if (frameTimer.IsEnabled && !forceRunning)
             {
-                System.Drawing.Rectangle cropRect = new System.Drawing.Rectangle(0, 0, this.spriteWidth, this.spriteHeight);
-                System.Drawing.Bitmap src = System.Drawing.Image.FromFile(this.spriteFilenames[spriteCount]) as System.Drawing.Bitmap;
-                System.Drawing.Bitmap target;// = new System.Drawing.Bitmap(cropRect.Width, cropRect.Height);
-                //this.frames = new BitmapSource[this.numberFrames];
-
-                for (int row = 0; row < this.ximages; row++)
-                {
-                    for (int col = 0; col < this.yimages; col++)
-                    {
-                        int currentX = row * this.spriteWidth;
-                        int currentY = col * this.spriteHeight;
-
-                        cropRect.X = currentX;
-                        cropRect.Y = currentY;
-
-                        target = new System.Drawing.Bitmap(cropRect.Width, cropRect.Height);
-
-                        using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(target))
-                        {
-                            g.DrawImage(src, new System.Drawing.Rectangle(0, 0, target.Width, target.Height),
-                                cropRect, System.Drawing.GraphicsUnit.Pixel);
-                        }
-
-                        BitmapSource frame = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                           target.GetHbitmap(), IntPtr.Zero,
-                           System.Windows.Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight(target.Width, target.Height));
-
-                        int index = row + col * this.ximages;
-                        Console.WriteLine("row: " + row + ", col: " + col + ", index: " + index);
-                        //this.frames[index] = frame;
-                        this.sprites[spriteCount, index] = frame;
-
-                    }
-                }
-                //this.sprites[spriteCount] = this.frames;
-                GC.Collect();
+                frameTimer.Stop();
             }
-            */
+            else
+            {
+                frameTimer.Start();
+            }
         }
 
         private void keydown(object sender, KeyEventArgs e)
@@ -276,12 +262,12 @@ namespace StarFlowers
             else if (e.Key.Equals(System.Windows.Input.Key.G))
             {
                 this.blinkAlert(3);
-                frameTimer.Start();
+                
             }
             else if (e.Key.Equals(System.Windows.Input.Key.T))
             {
-                this.triggerAreaBlink(!this.triggerBlinking);
-                frameTimer.Start();
+                this.blinkTriggerAreaToggle(!this.triggerAreaBlinking);
+                this.toggleFrameTimer(true);
             }
             else if (e.Key.Equals(System.Windows.Input.Key.F11))
             {
@@ -297,28 +283,22 @@ namespace StarFlowers
             else if (e.Key.Equals(System.Windows.Input.Key.Space))
             {
                 int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-                //Color color = Color.FromArgb(random.Next(256), random.Next(256), random.Next(256), random.Next(256));
                 this.queueSeed(randomNumber, Colors.Red);
+            }
+            else if (e.Key.Equals(System.Windows.Input.Key.W))
+            {
+                this.witherAllPlants();
             }
             else if (e.Key.Equals(System.Windows.Input.Key.Enter))
             {
-                if (!this.frameTimer.IsEnabled)
-                {
-                    this.seedSeeds();
-
-                    frameTimer.Start();
-
-                    //this.startAnimation(this.sprite0, 480, 0, 0);
-                }
-                else
-                {
-                    frameTimer.Stop();
-                }
+                this.seedSeeds();
+                this.toggleFrameTimer(false);
+                this.toggleFrameTimer(true);
             }
         }
 
         /// <summary>
-        /// grows new plants from previously seeded seeds. if there are no seeds to plant available this method return without changes. 
+        /// seeds new plants from previously seeded seeds. if there are no seeds to plant available this method return without changes. 
         /// </summary>
         private void seedSeeds()
         {
@@ -333,7 +313,8 @@ namespace StarFlowers
                     Color color = this.seedColor[seed];
                     //remove from the waiting list
 
-                    Image spriteImg = this.availableSpriteContainers[0];
+                    Plant tempPlant = this.availableSpriteContainers[0];
+                    Image spriteImg = tempPlant.Img;
                     this.availableSpriteContainers.RemoveAt(0);
                     spriteImg.Margin = new Thickness(xPos, this.Height, 0, 0);
                     spriteImg.Height = 0;
@@ -341,7 +322,7 @@ namespace StarFlowers
                     double opacity = random.NextDouble()+0.25;
                     opacity = (opacity > 0.9) ? (0.75) : opacity;
                     spriteImg.Opacity = opacity;
-                    this.activeSpriteContainers.Add(spriteImg);
+                    this.activePlants.Add(tempPlant);
 
                     //in onFrame: grow only plants in the growing list.
                 }
@@ -357,8 +338,8 @@ namespace StarFlowers
         /// <param name="color">the plants color</param>
         private void queueSeed(int positionX, Color color)
         {
-            int futurePlantCount = this.activeSpriteContainers.Count + this.seedPosition.Count+1;
-            if (this.currentlyAvailableContainersCount < futurePlantCount //there are not enough containers for all future plants
+            int futurePlantCount = this.activePlants.Count + this.seedPosition.Count+1;
+            if (this.availableSpriteContainers.Count < futurePlantCount //there are not enough containers for all future plants
                 && this.maximumPlantCount >= futurePlantCount) //there is still enough capacity for more plants
             {
                 //add more capacity for images
@@ -373,11 +354,24 @@ namespace StarFlowers
             }
         }
 
-        private void OnFrame(object sender, EventArgs e)
+        private void blinkAlert(int seconds)
         {
-            //this.MainGrid.Margin
-            this.currentFrameCount++;
-            if (this.triggerBlinking)
+            this.alertBlinking = true;
+            this.alertBlinkingSeconds = seconds;
+            this.FlowerGrid.Width = this.Width;
+            this.FlowerGrid.Height = this.Height;
+            this.FlowerGrid.Background = Brushes.Red;
+            //TODO clear images and reset to default values
+        }
+
+        private void blinkTriggerAreaToggle(bool blinking)
+        {
+            this.triggerAreaBlinking = blinking;
+        }
+
+        private void fadeTriggerArea()
+        {
+            if (this.triggerAreaBlinking)
             {
                 if (this.TriggerArea.Opacity < 0.1)
                 {
@@ -389,137 +383,257 @@ namespace StarFlowers
                 }
 
                 this.TriggerArea.Opacity += this.triggerDiff;
+            }
+        }
 
-                //if (this.TriggerArea.Opacity > 0.1 && this.TriggerArea.Opacity < 0.9)
-                //{
+        /// <summary>
+        /// flashes the entire window fast in different colors
+        /// </summary>
+        private void blinkWindow()
+        {
+            if (this.currentFrameCount % 5 == 0)
+            {
+                //switch background color
+                if (this.FlowerGrid.Background.Equals(Brushes.Red))
+                {
+                    this.FlowerGrid.Background = Brushes.Black;
+                }
+                else if (this.FlowerGrid.Background.Equals(Brushes.Black))
+                {
+                    this.FlowerGrid.Background = Brushes.Green;
+                }
+                else if (this.FlowerGrid.Background.Equals(Brushes.Green))
+                {
+                    this.FlowerGrid.Background = Brushes.Blue;
+                }
+                else
+                {
+                    this.FlowerGrid.Background = Brushes.Red;
+                }
 
-                //}
-                //if (this.TriggerArea.Opacity < 1.0)
-                //{
-                //    this.TriggerArea.Opacity += 0.1;
-                //}
-                //else
-                //{
+                if (this.currentFrameCount % 30 == 0)
+                {
+                    this.alertBlinkingSeconds--;
+                }
+            }
+        }
 
-                //}
+        /// <summary>
+        /// tell all plants that they are withering
+        /// </summary>
+        private void witherAllPlants()
+        {
+            foreach (Plant plant in this.activePlants)
+            {
+                plant.IsWithering = true;
+            }
+        }
+
+        /// <summary>
+        /// resets the entire drawing mode to its default values. 
+        /// only resets if a reset is needed, meaing a reset is available.
+        /// </summary>
+        private void resetPlants()
+        {
+            Console.WriteLine("in reset");
+            if (this.resetAvailable)
+            {
+                Console.WriteLine("doing reset");
+                this.resetAvailable = false;
+
+                //reset offset (offset against burning)
+                this.xOffset = 0;
+                this.xOffsetDiff = 0;
+
+                //reset alert blinking
+                this.alertBlinkingSeconds = 0;
+                this.alertBlinking = false;
+                this.FlowerGrid.Background = Brushes.Black;
+
+                //reset trigger area
+                this.triggerAreaBlinking = false;
+                this.TriggerArea.Opacity = 0.0;
+
+                this.removeCandidates.Clear();
+
+                for (int i = 0; i < this.activePlants.Count; i++)
+                {
+                    //this.FlowerGrid.Children.Remove(this.activeSpriteContainers[i].Img);
+                    //this.activeSpriteContainers[i].Img = null;
+                    //this.activeSpriteContainers.Remove(this.activeSpriteContainers[i]);
+                    this.removePlant(this.activePlants[i]);
+                }
+
+                this.activePlants.Clear(); //obsolete
+                this.FlowerGrid.Children.Clear(); //obsolete
+
+                //reset flowers (remove children from grid, remove , update available count, remove 
+                this.seedPosition.Clear();
+                this.seedColor.Clear();
+                //this.availableSpriteContainers; //TODO reuse containers instead of deleting them. 
+                Console.WriteLine("reset done");
+            }
+        }
+
+        /// <summary>
+        /// removes a given plant of the drawing grid and from the list of active plants.
+        /// the plants is hard-removed, meaning not withering ist done. 
+        /// if you want to wither a plant, set its IsWithering property to true.
+        /// </summary>
+        /// <param name="plantToRemove"></param>
+        private void removePlant(Plant plantToRemove)
+        {
+            this.FlowerGrid.Children.Remove(plantToRemove.Img);
+            plantToRemove.Img = null;
+            this.activePlants.Remove(plantToRemove);
+        }
+
+
+        /// <summary>
+        /// calculates the global offset for the plants, which will be applied in careForPlants. 
+        /// prevents burning of contours. 
+        /// </summary>
+        private void calcGlobalOffset()
+        {
+            if (this.currentFrameCount % 120 == 0 && this.xOffset <= 0)
+            {
+                //every 120 frames: set random offset to left or right
+                this.xOffset = random.Next(300);
+                this.xOffset = 150 - this.xOffset;
             }
 
-            if (alertBlinking)
+            if (this.currentFrameCount % 2 == 0)
             {
-                if (this.alertBlinkingSeconds > 0)
+                //check this only every other frame, so the animation seems smooth
+                if (this.xOffset > 0)
                 {
-                    if (this.currentFrameCount % 5 == 0)
-                    {
-                        //switch background color
-                        if (this.FlowerGrid.Background.Equals(Brushes.Red))
-                        {
-                            this.FlowerGrid.Background = Brushes.Black;
-                        }
-                        else if (this.FlowerGrid.Background.Equals(Brushes.Black))
-                        {
-                            this.FlowerGrid.Background = Brushes.Green;
-                        }
-                        else if (this.FlowerGrid.Background.Equals(Brushes.Green))
-                        {
-                            this.FlowerGrid.Background = Brushes.Blue;
-                        }
-                        else
-                        {
-                            this.FlowerGrid.Background = Brushes.Red;
-                        }
-                        if (this.currentFrameCount % 60 == 0)
-                        {
-                            this.alertBlinkingSeconds--;
-                        }
-                    }
+                    //if there is a offset to the right, do it
+                    this.xOffsetDiff = 1;
+                    this.xOffset--;
+                }
+                else if (this.xOffset < 0)
+                {
+                    //if there is an offset to the left, do it
+                    this.xOffsetDiff = -1;
+                    this.xOffset++;
                 }
             }
             else
             {
-                if (this.currentFrameCount % 120 == 0 && this.xOffset <= 0)
-                {
-                    //every 120 frames: set random offset to left or right
-                    this.xOffset = random.Next(300);
-                    this.xOffset = 150 - this.xOffset;
-                }
-
-                if (this.currentFrameCount % 2 == 0)
-                {
-                    //check this only every other frame, so the animation seems smooth
-                    if (this.xOffset > 0)
-                    {
-                        //if there is a offset to the right, do it
-                        //this.FlowerGrid.Margin = new Thickness(this.FlowerGrid.Margin.Left - 1, 0, 0, 0);
-                        this.xOffsetDiff = 1;
-                        this.xOffset--;
-                    }
-                    else if (this.xOffset < 0)
-                    {
-                        //if there is an offset to the left, do it
-                        //this.FlowerGrid.Margin = new Thickness(this.FlowerGrid.Margin.Left - 1, 0, 0, 0);
-                        this.xOffsetDiff = -1;
-                        this.xOffset++;
-                    }
-                }
-                else
-                {
-                    this.xOffsetDiff = 0;
-                }
-
-                this.seedSeeds();
-
-                for (int spriteCount = 0; spriteCount < this.activeSpriteContainers.Count; spriteCount++)
-                {
-                    Image currentSprite = this.activeSpriteContainers[spriteCount];
-                    currentSprite.Source = this.spriteImages[spriteCount % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
-                    if (currentSprite.Height < this.spriteHeight)
-                    {
-                        currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 1, currentSprite.Margin.Top - 2, 0, 0);
-                        currentSprite.Height = currentSprite.Height + 2;
-                    }
-                    if (this.xOffsetDiff != 0)
-                    {
-                        //aply the offset
-                        currentSprite.Margin = new Thickness(currentSprite.Margin.Left + xOffsetDiff, currentSprite.Margin.Top, 0, 0);
-                    }
-                }
+                this.xOffsetDiff = 0;
             }
         }
 
-        private void startAnimation(Image animatedImage, int oldMarginX, int newMarginX, int globalMarginX)
+        /// <summary>
+        /// takes care that plants are growing, sprite animations are playing and plants are moving left and right
+        /// </summary>
+        private void careForPlants()
         {
-            // Create a new animation with start and end values, duration and
-            // an optional completion handler.
-            /*
-            DoubleAnimation da = new DoubleAnimation();
-            da.From = oldMarginX;
-            da.To = newMarginX;
-            da.Duration = new Duration(TimeSpan.FromSeconds(1));
-            //da.RepeatBehavior = RepeatBehavior.Forever;
-            //da.AutoReverse = true;
-            //da.Completed += new EventHandler(Animation_Completed);
-            da.Completed += (sender, eArgs) => AnimationCompleted(animatedImage, oldMarginX, newMarginX, globalMarginX+newMarginX); // syntax with parameters
-            */
+            for (int spriteCount = 0; spriteCount < this.activePlants.Count; spriteCount++)
+            {
+                Plant currentPlant = this.activePlants[spriteCount];
+                Image currentSprite = currentPlant.Img;
+                //currentSprite.Source = this.spriteImages[spriteCount % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
+                currentSprite.Source = this.spriteImages[currentPlant.SpriteIndex % this.spriteCountUnique, this.currentFrameCount % this.numberFrames];
+                if (currentPlant.IsGrowing && currentSprite.Height < this.spriteHeight)
+                {
+                    currentSprite.Margin = new Thickness(currentSprite.Margin.Left - 1, currentSprite.Margin.Top - 2, 0, 0);
+                    currentSprite.Height = currentSprite.Height + 2;
+                    if (currentSprite.Height >= this.spriteHeight)
+                    {
+                        currentPlant.IsGrowing = false;
+                    }
+                }
+                else if (currentPlant.IsWithering)
+                {
+                    if (currentSprite.Height > 10)
+                    {
+                        currentSprite.Margin = new Thickness(currentSprite.Margin.Left + 1, currentSprite.Margin.Top + 2, 0, 0);
+                        currentSprite.Height = currentSprite.Height - 2;
+                    }
+                    else
+                    {
+                        //mark this plant as a remove candidate
+                        this.removeCandidates.Add(currentPlant);
+                    }
+                }
+                //else if (this.currentFrameCount % 10 == 0)
+                //{
+                //    Console.WriteLine(currentPlant.TimeGrown);
+                //    if (currentPlant.TimeGrown > 5)
+                //    {
+                //        //wither after 5 seconds of being fully grown
+                //        currentPlant.IsWithering = true;
+                //    }
+                //}
+                if (this.xOffsetDiff != 0)
+                {
+                    //aply the offset
+                    currentSprite.Margin = new Thickness(currentSprite.Margin.Left + xOffsetDiff, currentSprite.Margin.Top, 0, 0);
+                }
+            }
 
-            // Start animating the x-translation 
-            //TranslateTransform rt = new TranslateTransform();
-            //animatedImage.RenderTransform = rt;
-            //rt.BeginAnimation(TranslateTransform.YProperty, da);
-
-            //ScaleTransform scaleTransform1 = new ScaleTransform(1.5, 2.0, 50, 50);
-            //animatedImage.RenderTransform = scaleTransform1;
-            //scaleTransform1.BeginAnimation(ScaleTransform.ScaleYProperty, da);
+            if (this.removeCandidates.Count > 0)
+            {
+                for (int i = 0; i < this.removeCandidates.Count; i++)
+                {
+                    this.removePlant(this.removeCandidates[i]);
+                }
+                this.removeCandidates.Clear();
+                this.resetAvailable = true; //indicates that a plant has been removed and that there might be a complete resete necessary
+            }
         }
 
-        private void AnimationCompleted(Image animatedImage, int oldMarginX, int newMarginX, int globalMarginX)
+        /// <summary>
+        /// increment the time based frame counter
+        /// </summary>
+        private void doFrameCounter()
         {
-            //Console.WriteLine("margin: " + this.sprite0.Margin);
-            //Console.WriteLine("animatedImage: " + animatedImage.Margin);
-            //this.sprite0.Margin = new Thickness(globalMarginX, 0, 0, 0);
-            //this.startAnimation(this.sprite0, 0, newMarginX, globalMarginX);
-            //set new position
-            //this.startAnimation(this.sprite0, oldMarginX, newMarginX);
+            //this.currentFrameCount++;
+            DateTime currentTime = DateTime.Now;
+
+            int millisSinceLast = (currentTime - this.oldTime).Milliseconds;
+            while (millisSinceLast > frameTime)
+            {
+                this.currentFrameCount += 5;
+                millisSinceLast -= frameTime;
+                this.oldTime = currentTime;
+            }
         }
 
+        private void OnFrame(object sender, EventArgs e)
+        {
+            this.doFrameCounter();
+
+            this.fadeTriggerArea();
+
+            if (alertBlinking && this.alertBlinkingSeconds > 0)
+            {
+                this.blinkWindow();
+            }
+            else
+            {
+                this.alertBlinking = false;
+                
+                this.calcGlobalOffset();
+
+                this.seedSeeds();
+
+                this.careForPlants(); 
+            }
+
+            if (this.resetAvailable //only if a reset is necessary, meaning that a plant has been removed previously
+                && this.currentFrameCount % 10 == 0 //only every so often. for performance
+                && this.activePlants.Count + this.seedPosition.Count <= 0 //only if there are no more plants left
+                )
+            {
+                this.resetPlants();
+            }
+        }
+
+        private void WindowSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            this.initTriggerArea();
+        }
     }
 }
