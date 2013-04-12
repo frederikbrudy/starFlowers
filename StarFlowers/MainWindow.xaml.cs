@@ -47,8 +47,6 @@ namespace StarFlowers
         private KinectSensor sensor;
         // Bitmap mit Farbinformation
         private WriteableBitmap[] colorBitmaps = new WriteableBitmap[2];
-        // Bitmap mit Opacity-Maske
-        private WriteableBitmap[] playerOpacityMaskImages = new WriteableBitmap[2];
 
         private int[] greenScreenPixelData;
         // x- und y-Werte
@@ -59,6 +57,8 @@ namespace StarFlowers
         private int opaquePixelValue = -1;
 
         private int colorToDepthDivisor;
+
+        private double windowWidth, windowHeight;
 
         /// <summary>
         /// dispatcher for frame events
@@ -339,6 +339,7 @@ namespace StarFlowers
             img.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
             img.VerticalAlignment = System.Windows.VerticalAlignment.Top;
             Plant tempPlant = new Plant(img, spriteIndexGlobal++);
+
             this.FlowerGrid.Children.Add(img);
             this.availableSpriteContainers.Add(tempPlant);
         }
@@ -399,7 +400,7 @@ namespace StarFlowers
                 //only start to grow the plants if they have been seeded previously
                 for (int seed = this.seedPosition.Count - 1; seed >= 0; seed--)
                 {
-                    Console.WriteLine("seed position: " + seed + ", this.seedPosition.Count: " + this.seedPosition.Count);
+                    //Console.WriteLine("seed position: " + seed + ", this.seedPosition.Count: " + this.seedPosition.Count);
                     //get all planted seeds and add them to the growing list.
                     int xPos = this.seedPosition[seed];
                     Color color = this.seedColor[seed];
@@ -433,8 +434,9 @@ namespace StarFlowers
                 && this.maximumPlantCount >= futurePlantCount) //there is still enough capacity for more plants
             {
                 //add more capacity for images
-                Console.WriteLine("adding more capacity for images");
-                this.addSpriteContainer();
+                //Console.WriteLine("adding more capacity for images");
+
+                Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => this.addSpriteContainer()));
             }
             if (futurePlantCount <= this.maximumPlantCount)
             {
@@ -790,7 +792,7 @@ namespace StarFlowers
                             mutex.ReleaseMutex(); // gibt Mutex wieder frei
                             foreach (Process p in processes)
                             {
-                                p.Kill(); // beendet alle Konsolenanwendungen
+                                //p.Kill(); // beendet alle Konsolenanwendungen
                             }
                         }
                     }
@@ -813,13 +815,13 @@ namespace StarFlowers
                             mutex.ReleaseMutex(); // gibt Mutex wieder frei
                             foreach (Process p in processes)
                             {
-                                p.Kill(); // beendet alle Konsolenanwendungen
+                                //p.Kill(); // beendet alle Konsolenanwendungen
                             }
                         }
                     }
 
                 }
-                Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => processSensorData(receivedSkeleton, receivedDepthPixels, receivedColorStream)));
+                processSensorData(receivedSkeleton, receivedDepthPixels, receivedColorStream);
 
                 Thread.Sleep(25); // wartet ein bisschen
             }
@@ -895,7 +897,7 @@ namespace StarFlowers
         /// <returns></returns>
         private Point3D pointTo3DPoint(System.Windows.Point point2D, int offset)
         {
-            return new Point3D((point2D.X/2) - (this.Width / 2) + offset, (this.Height / 2) - point2D.Y, 0.0);
+            return new Point3D((point2D.X/2) - (this.windowWidth / 2) + offset, (this.windowHeight / 2) - point2D.Y, 0.0);
         }
 
         /// <summary>
@@ -906,8 +908,8 @@ namespace StarFlowers
         private System.Windows.Point stretchDepthPointToScreen(System.Windows.Point depthPoint)
         {
             System.Windows.Point screenPoint = new System.Windows.Point();
-            screenPoint.X = depthPoint.X * this.Width / 640.0;
-            screenPoint.Y = depthPoint.Y * this.Height / 480.0;
+            screenPoint.X = depthPoint.X * this.windowWidth / 640.0;
+            screenPoint.Y = depthPoint.Y * this.windowHeight / 480.0;
             return screenPoint;
         }
 
@@ -989,8 +991,11 @@ namespace StarFlowers
             this.World.Width = desiredWidth;
             //this.Width = size.Width;
             //this.Height = size.Height;
-            this.Width = desiredWidth;
-            this.Height = System.Windows.SystemParameters.PrimaryScreenHeight; //480
+            this.windowWidth = desiredWidth;
+            this.windowHeight = System.Windows.SystemParameters.PrimaryScreenHeight; //480
+
+            this.Width = this.windowWidth;
+            this.Height = this.windowHeight;
             this.Left = size.Left;
             this.Top = size.Top;
 
@@ -1038,8 +1043,8 @@ namespace StarFlowers
 
             greenScreenPixelData = new int[ColorAndDepthPixelArrayByteLength/4];
             colorCoordinates = new ColorImagePoint[ColorAndDepthPixelArrayByteLength/4];
-            colorBitmaps[0] = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgr32, null);
-            colorBitmaps[1] = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgr32, null);
+            colorBitmaps[0] = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgra32, null);
+            colorBitmaps[1] = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgra32, null);
             OverlayImages[0].Source = colorBitmaps[0];
             OverlayImages[1].Source = colorBitmaps[1];
         }
@@ -1134,32 +1139,41 @@ namespace StarFlowers
             }
         }
 
-        void DrawImage(WriteableBitmap image, byte[] imageBytes)
+        void DrawOverlay(WriteableBitmap image, int[] imageBytes)
         {
             image.WritePixels(
                 new Int32Rect(0, 0, 640, 480),
                 imageBytes,
-                image.PixelWidth * sizeof(int),
+                /*image.PixelWidth * sizeof(int),*/
+                depthWidth * ((image.Format.BitsPerPixel + 7) / 8),
                 0);
         }
 
-        CroppedBitmap GetCroppedImage(int imagePos, byte[] imageBytes, int xPos, int yPos, int size)
+        void showHeadTrackedImage(bool skeletonAvailable, int imagePos, byte[] imageBytes, int xPos, int yPos, int size)
         {
-            WriteableBitmap wb = new WriteableBitmap(640, 480, 96.0, 96.0, PixelFormats.Bgr32, null);
-            wb.WritePixels(
-                new Int32Rect(0, 0, 640, 480),
-                imageBytes,
-                wb.PixelWidth * sizeof(int),
-                0);
-            int cropXPos = xPos - size / 2;
-            int cropYPos = yPos - size / 2;
+            if (skeletonAvailable)
+            {
+                WriteableBitmap wb = new WriteableBitmap(640, 480, 96.0, 96.0, PixelFormats.Bgr32, null);
+                wb.WritePixels(
+                    new Int32Rect(0, 0, 640, 480),
+                    imageBytes,
+                    wb.PixelWidth * sizeof(int),
+                    0);
+                int cropXPos = xPos - size / 2;
+                int cropYPos = yPos - size / 2;
 
-            if (cropXPos < 0) cropXPos = 0;
-            if (cropXPos > 640 - size) cropXPos = 640 - size;
-            if (cropYPos < 0) cropYPos = 0;
-            if (cropYPos > 480 - size) cropYPos = 480 - size;
+                if (cropXPos < 0) cropXPos = 0;
+                if (cropXPos > 640 - size) cropXPos = 640 - size;
+                if (cropYPos < 0) cropYPos = 0;
+                if (cropYPos > 480 - size) cropYPos = 480 - size;
 
-            return new CroppedBitmap(wb, new Int32Rect(cropXPos, cropYPos, size, size));
+                HeadTrackingImages[imagePos].Source = new CroppedBitmap(wb, new Int32Rect(cropXPos, cropYPos, size, size));             
+                HeadTrackingImages[imagePos].Opacity = 1;
+            }
+            else
+            {
+                HeadTrackingImages[imagePos].Opacity = 0;
+            }     
         }
 
         int euklDistanz(int x1, int y1, int x2, int y2)
@@ -1179,10 +1193,7 @@ namespace StarFlowers
                 ms.Position = 0;
                 return bf.Deserialize(ms);
             }
-            catch (Exception _Exception)
-            {
-                Console.WriteLine("Kein Skelett übertragen.");
-            }
+            catch (Exception _Exception) {}
 
             // Error occured, return null
             return null;
@@ -1193,7 +1204,6 @@ namespace StarFlowers
             
             for (int screenCounter = 0; screenCounter < sensors.Count; screenCounter++)
             {
-
                 // Variablen für Head Tracking
                 int kopfXPos = 0;
                 int kopfYPos = 0;
@@ -1207,7 +1217,7 @@ namespace StarFlowers
                 this.leftHandPoints[screenCounter].Clear();
                 this.handCenterPoints[screenCounter].Clear();
                 this.playerCenterPoints[screenCounter].Clear();
-                int offset = (screenCounter == 0) ? (0) : ((int)this.Width / 2);
+                int offset = (screenCounter == 0) ? (0) : ((int)this.windowWidth / 2);
 
                 bool skeletonTracked = false;
                 Skeleton skeleton = new Skeleton();
@@ -1324,14 +1334,15 @@ namespace StarFlowers
                             this.leftHandPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(leftHandPoint), offset));
                         }
 
-                        if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.Height * 0.9)
+                        if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.windowHeight * 0.9)
                         {
                             Console.WriteLine("seeding for right hand on skel " + screenCounter);
                             //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
+
                             this.queueSeed((int)this.stretchDepthPointToScreen(rightHandPoint).X/2 + offset, Colors.Red);
                         }
 
-                        if (leftHandPoint != null && this.stretchDepthPointToScreen(leftHandPoint).Y > this.Height * 0.9)
+                        if (leftHandPoint != null && this.stretchDepthPointToScreen(leftHandPoint).Y > this.windowHeight * 0.9)
                         {
                             Console.WriteLine("seeding for left hand on skel " + screenCounter);
                             //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
@@ -1339,7 +1350,7 @@ namespace StarFlowers
                         }
 
                         // wenn beide Hände erkannt wurden, zusätzlich Mittelpunkt zwischen den Händen anzeigen
-                        if (leftHandPoint != null && rightHandPoint != null)
+                        /*if (leftHandPoint != null && rightHandPoint != null)
                         {
                             System.Windows.Point handCenterPoint = new System.Windows.Point((rightHandPoint.X + leftHandPoint.X) / 2,
                                                                                             (rightHandPoint.Y + leftHandPoint.Y) / 2);
@@ -1349,7 +1360,7 @@ namespace StarFlowers
 
                             this.handCenterThicknesses[screenCounter] = distance / 8;
                             this.handCenterPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint), offset));
-                        }
+                        }*/
                     }
 
                     // Head tracking, wenn Skeleton verfügbar
@@ -1371,40 +1382,18 @@ namespace StarFlowers
                         kopfYPos = (kopfY + halsY) / 2;
 
                         distanzKopfZuHals = euklDistanz(kopfX, kopfY, halsX, halsY);
-
-                        HeadTrackingImages[screenCounter].Source = GetCroppedImage(screenCounter, colorStream, kopfXPos, kopfYPos, distanzKopfZuHals * 2);
+                        
                     }
-
-
                 }
+                
+                // Head Tracked Image zeichnen oder ausblenden
+                Dispatcher.Invoke(DispatcherPriority.Normal, new Action(() => showHeadTrackedImage(skeletonTracked, screenCounter, colorStream, kopfXPos, kopfYPos, distanzKopfZuHals * 2)));
 
                 // ------- Overlay zeichnen ------------
 
-                for (int x = 0; x < colorStream.Length; x++)
-                {
-                    // setzt alle Pixel auf dunkelgrau statt dem Kamerabild
-                    colorStream[x] = (byte)80;
-                }
+                Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => DrawOverlay(colorBitmaps[screenCounter], greenScreenPixelData)));
 
                 int centerPointPixel = ((int)playerCenterPoint.X + ((int)playerCenterPoint.Y * depthWidth));
-
-                colorBitmaps[screenCounter].WritePixels(
-                    new Int32Rect(0, 0, colorBitmaps[screenCounter].PixelWidth, colorBitmaps[screenCounter].PixelHeight),
-                    colorStream,
-                    colorBitmaps[screenCounter].PixelWidth * sizeof(int),
-                    0);
-
-                if (null == playerOpacityMaskImages[screenCounter])
-                {
-                    playerOpacityMaskImages[screenCounter] = new WriteableBitmap(depthWidth, depthHeight, 96, 96, PixelFormats.Bgra32, null);
-                    OverlayImages[screenCounter].OpacityMask = new ImageBrush(playerOpacityMaskImages[screenCounter]);
-                }
-
-                playerOpacityMaskImages[screenCounter].WritePixels(
-                    new Int32Rect(0, 0, depthWidth, depthHeight),
-                    greenScreenPixelData,
-                    depthWidth * ((playerOpacityMaskImages[screenCounter].Format.BitsPerPixel + 7) / 8),
-                    0);
 
                 if (playerCenterPoint != null)
                 {
@@ -1413,11 +1402,7 @@ namespace StarFlowers
                         this.playerCenterPoints[screenCounter].Add(this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint), offset));
                     }
                 }
-
-
-            } // end for screencounter-loop
-
-            
+            } // end for screencounter-loop   
         }
 
     }
