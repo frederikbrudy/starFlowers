@@ -158,7 +158,7 @@ namespace StarFlowers
         /// <summary>
         /// width of a single sprite frame
         /// </summary>
-        int spriteWidth = 600;
+        int spriteWidth = 150;
 
         /// <summary>
         /// height of a single sprite frame
@@ -345,8 +345,8 @@ namespace StarFlowers
         private void addSpriteContainer()
         {
             Image img = new Image();
-            img.Width = 600;
-            img.Height = 480;
+            img.Width = spriteWidth;
+            img.Height = spriteHeight;
             img.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
             img.VerticalAlignment = System.Windows.VerticalAlignment.Top;
             Plant tempPlant = new Plant(img, spriteIndexGlobal++);

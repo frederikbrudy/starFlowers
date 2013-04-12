@@ -53,7 +53,7 @@
         <Canvas Name="FlowerGrid" HorizontalAlignment="Left" VerticalAlignment="Top">
         </Canvas>
         <Rectangle Name="TriggerArea" HorizontalAlignment="Left" VerticalAlignment="Top" 
-                   Fill="Aquamarine" Height="48" Width="1000" Opacity="0.0">
+                   Fill="Aquamarine" Height="60" Width="1000" Opacity="0.0">
 
         </Rectangle>
     </Grid>
