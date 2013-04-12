@@ -114,11 +114,11 @@ namespace StarFlowers
         System.Windows.Point rightHandPoint = new System.Windows.Point();
         System.Windows.Point leftHandPoint = new System.Windows.Point();
 
-        private System.Windows.Media.Color colorLeftHand = Colors.Orchid;
+        private System.Windows.Media.Color colorLeftHand = Colors.Yellow;
         private System.Windows.Media.Color colorRightHand = Colors.Blue;
-        private System.Windows.Media.Color colorBodyCenter = Colors.Turquoise;
+        private System.Windows.Media.Color colorBodyCenter = Colors.Red;
         private System.Windows.Media.Color colorMousePoint = Colors.Green;
-        private System.Windows.Media.Color colorHandCenterPoint = Colors.Yellow;
+        private System.Windows.Media.Color colorHandCenterPoint = Colors.Orchid;
         private System.Windows.Media.Brush brushLeftHand;
         private System.Windows.Media.Brush brushRightHand;
         private System.Windows.Media.Brush brushMousePoint;
@@ -1192,7 +1192,6 @@ namespace StarFlowers
                 }
             }
         }
-
 
         void DrawOverlay(WriteableBitmap image, int[] imageBytes)
         {
