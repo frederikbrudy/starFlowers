@@ -1063,15 +1063,12 @@ namespace StarFlowers
 
             //Console.WriteLine(this.FlowerGrid.Height);
 
-            Color centerColor = Colors.LightGray;
-            Color midColor = Colors.DarkGray;
-            Color endColor = Colors.Gray;
+            Color startColor = Colors.DarkGreen; //LightGray
+            Color midColor = Colors.DarkGreen; //DarkGray
+            Color endColor = Colors.Black; //Gray
             RadialGradientBrush b = new RadialGradientBrush();
-            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, centerColor.R, centerColor.G, centerColor.B), 0.15));
-            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, midColor.R, midColor.G, midColor.B), 0.5));
+            b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, startColor.R, startColor.G, startColor.B), 0.05));
             b.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0xFF, endColor.R, endColor.G, endColor.B), 1.0));
-            //this.OverlayImage0.Opacity = 0;
-            //this.OverlayImage1.Opacity = 0;
             this.Background = b;
         }
 
