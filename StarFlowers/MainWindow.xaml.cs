@@ -250,6 +250,11 @@ namespace StarFlowers
         private bool resetAvailable;
         private DateTime oldTime;
         private const int frameTime = 30;
+        private bool[] currentlySeedingLeft;
+        private bool[] currentlySeedingRight;
+        private bool[] growingPlants;
+        private double headDiff;
+        private bool showHead;
 
         /*
          * end flower area
@@ -262,14 +267,15 @@ namespace StarFlowers
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            this.initSprites();
-            this.initTriggerArea();
 
             this.initWindowSize();
             this.initParticleSystem();
             this.initDrawingData();
             this.initBrushes();
             this.initKinect();
+
+            this.initSprites();
+            this.initTriggerArea();
 
             var mappedfileThread = new Thread(this.MemoryMapData);
             mappedfileThread.SetApartmentState(ApartmentState.STA);
@@ -290,6 +296,8 @@ namespace StarFlowers
             this.TriggerArea.Opacity = 0.0;
             this.TriggerArea.Width = this.Width;
             this.TriggerArea.Margin = new Thickness(0, this.Height - this.TriggerArea.Height, 0, 0);
+
+           
         }
 
         /// <summary>
@@ -325,7 +333,10 @@ namespace StarFlowers
 
             this.removeCandidates = new List<Plant>();
 
-            
+            currentlySeedingLeft = new bool[sensors.Count];
+            currentlySeedingRight = new bool[sensors.Count];
+
+            this.growingPlants = new bool[sensors.Count];
         }
 
         /// <summary>
@@ -400,7 +411,6 @@ namespace StarFlowers
                 //only start to grow the plants if they have been seeded previously
                 for (int seed = this.seedPosition.Count - 1; seed >= 0; seed--)
                 {
-                    //Console.WriteLine("seed position: " + seed + ", this.seedPosition.Count: " + this.seedPosition.Count);
                     //get all planted seeds and add them to the growing list.
                     int xPos = this.seedPosition[seed];
                     Color color = this.seedColor[seed];
@@ -416,6 +426,7 @@ namespace StarFlowers
                     opacity = (opacity > 0.9) ? (0.75) : opacity;
                     spriteImg.Opacity = opacity;
                     this.activePlants.Add(tempPlant);
+
                 }
                 this.seedPosition.Clear();
                 this.seedColor.Clear();
@@ -434,7 +445,6 @@ namespace StarFlowers
                 && this.maximumPlantCount >= futurePlantCount) //there is still enough capacity for more plants
             {
                 //add more capacity for images
-                //Console.WriteLine("adding more capacity for images");
 
                 Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => this.addSpriteContainer()));
             }
@@ -475,6 +485,42 @@ namespace StarFlowers
                 }
 
                 this.TriggerArea.Opacity += this.triggerDiff;
+            }
+            else
+            {
+                if (this.TriggerArea.Opacity > 0.0)
+                {
+                    this.triggerDiff = -0.05;
+                    this.TriggerArea.Opacity += this.triggerDiff;
+                }
+
+            }
+        }
+
+        private void fadeHeadArea() {
+            if (this.showHead)
+            {
+                //fade in
+                foreach (Image head in this.HeadTrackingImages)
+                {
+                    if (head.Opacity < 1.0)
+                    {
+                        this.headDiff = 0.025;
+                        head.Opacity += this.headDiff;
+                    }
+                }
+            }
+            else
+            {
+                //fade out
+                foreach (Image head in this.HeadTrackingImages)
+                {
+                    if (head.Opacity > 0.0)
+                    {
+                        this.headDiff = -0.025;
+                        head.Opacity += this.headDiff;
+                    }
+                }
             }
         }
 
@@ -749,6 +795,7 @@ namespace StarFlowers
                         var receivedSkeletonBytes = new byte[SkeletonObjektByteLength]; // Byte-Array mit Laenge von serialized Skeleton
                         mutex = Mutex.OpenExisting("mappedfilemutex");
                         mutex.WaitOne(); // sichert alleinigen Zugriff
+
                         accessor = skeletonFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
                         accessor.ReadArray<byte>(0, receivedSkeletonBytes, 0, receivedSkeletonBytes.Length); // liest Nachricht von Konsolenanwendung
                         mutex.ReleaseMutex(); // gibt Mutex wieder frei
@@ -762,6 +809,7 @@ namespace StarFlowers
                         //    Console.WriteLine("Kein Skeleton empfangen!");
                         //}
                         //Console.WriteLine("------------");
+
                     }
                     catch (Exception ex)
                     {
@@ -780,6 +828,7 @@ namespace StarFlowers
                             receivedDepthPixels[x] = new DepthImagePixel[307200]; // 307200 = 640 x 480
                             mutex = Mutex.OpenExisting("mappedfilemutex");
                             mutex.WaitOne();
+
                             accessor = depthFiles[x].CreateViewAccessor(); // Reader fuer aktuelle MMF
                             accessor.ReadArray<DepthImagePixel>(0, receivedDepthPixels[x], 0, receivedDepthPixels[x].Length); // liest Nachricht von Konsolenanwendung
                             mutex.ReleaseMutex();
@@ -924,6 +973,7 @@ namespace StarFlowers
         /// </summary>
         private void initParticleSystem()
         {
+
             //this.spawnPoints = new Dictionary<Color,Point3D>();
             this.lastTick = Environment.TickCount;
 
@@ -991,6 +1041,7 @@ namespace StarFlowers
             this.World.Width = desiredWidth;
             //this.Width = size.Width;
             //this.Height = size.Height;
+
             this.windowWidth = desiredWidth;
             this.windowHeight = System.Windows.SystemParameters.PrimaryScreenHeight; //480
 
@@ -1005,7 +1056,8 @@ namespace StarFlowers
                 + ", this.Width: " + this.Width + ", scaleFactor: " + scaleFactor + ", this.ActualWidth: " + this.ActualWidth);
 
             this.FlowerGrid.Height = this.Height;
-            Console.WriteLine(this.FlowerGrid.Height);
+
+            //Console.WriteLine(this.FlowerGrid.Height);
 
             Color centerColor = Colors.LightGray;
             Color midColor = Colors.DarkGray;
@@ -1043,11 +1095,13 @@ namespace StarFlowers
 
             greenScreenPixelData = new int[ColorAndDepthPixelArrayByteLength/4];
             colorCoordinates = new ColorImagePoint[ColorAndDepthPixelArrayByteLength/4];
+
             colorBitmaps[0] = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgra32, null);
             colorBitmaps[1] = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgra32, null);
             OverlayImages[0].Source = colorBitmaps[0];
             OverlayImages[1].Source = colorBitmaps[1];
         }
+
 
         private void doFrameCalculation()
         {
@@ -1139,6 +1193,7 @@ namespace StarFlowers
             }
         }
 
+
         void DrawOverlay(WriteableBitmap image, int[] imageBytes)
         {
             image.WritePixels(
@@ -1148,6 +1203,7 @@ namespace StarFlowers
                 depthWidth * ((image.Format.BitsPerPixel + 7) / 8),
                 0);
         }
+
 
         void showHeadTrackedImage(bool skeletonAvailable, int imagePos, byte[] imageBytes, int xPos, int yPos, int size)
         {
@@ -1193,6 +1249,7 @@ namespace StarFlowers
                 ms.Position = 0;
                 return bf.Deserialize(ms);
             }
+
             catch (Exception _Exception) {}
 
             // Error occured, return null
@@ -1201,7 +1258,6 @@ namespace StarFlowers
 
         private void processSensorData(object[] skeletons, DepthImagePixel[][] depthStreams, byte[][] colorStreams)
         {
-            
             for (int screenCounter = 0; screenCounter < sensors.Count; screenCounter++)
             {
                 // Variablen für Head Tracking
@@ -1287,6 +1343,8 @@ namespace StarFlowers
                 }
 
                 // ------- Punkte zeichnen (Body Center und ggfs. Hände) ------------
+                
+                this.growingPlants[screenCounter] = true;
 
                 if (!skeletonTracked) // nur Tiefendaten verfügbar, kein Skeleton
                 {
@@ -1300,10 +1358,17 @@ namespace StarFlowers
                     {
                         // Mittelpunkt ist ganz oben links
                         playerCenterPoint = new System.Windows.Point(0.0, 0.0);
+                        this.growingPlants[screenCounter] = false;
                     }
+                    this.blinkTriggerAreaToggle(false);
                 }
                 else // Skeleton verfügbar
                 {
+                    if (this.activePlants.Count < 1)
+                    {
+                        this.blinkTriggerAreaToggle(true);
+                    }
+
                     if (skeleton.TrackingState == SkeletonTrackingState.PositionOnly)
                     {
                         // wenn nur Position vorhanden, dann diese als Mittelpunkt nehmen
@@ -1336,20 +1401,40 @@ namespace StarFlowers
 
                         if (rightHandPoint != null && this.stretchDepthPointToScreen(rightHandPoint).Y > this.windowHeight * 0.9)
                         {
-                            Console.WriteLine("seeding for right hand on skel " + screenCounter);
-                            //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-
-                            this.queueSeed((int)this.stretchDepthPointToScreen(rightHandPoint).X/2 + offset, Colors.Red);
+                   
+                            if (!this.currentlySeedingRight[screenCounter])
+                            {
+                                Console.WriteLine("seeding for right hand on skel " + screenCounter);
+                                //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
+                                this.queueSeed((int)this.stretchDepthPointToScreen(rightHandPoint).X / 2 + offset, Colors.Red);
+                                this.currentlySeedingRight[screenCounter] = true;
+                                this.blinkTriggerAreaToggle(false);
+                            }
+                        }
+                        else
+                        {
+                            this.currentlySeedingRight[screenCounter] = false;
                         }
 
                         if (leftHandPoint != null && this.stretchDepthPointToScreen(leftHandPoint).Y > this.windowHeight * 0.9)
                         {
-                            Console.WriteLine("seeding for left hand on skel " + screenCounter);
-                            //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
-                            this.queueSeed((int)this.stretchDepthPointToScreen(leftHandPoint).X/2 + offset, Colors.Red);
+
+                            if (!this.currentlySeedingLeft[screenCounter])
+                            {
+                                Console.WriteLine("seeding for left hand on skel " + screenCounter);
+                                //int randomNumber = random.Next(0, Convert.ToInt32(this.Width));
+                                this.queueSeed((int)this.stretchDepthPointToScreen(leftHandPoint).X / 2 + offset, Colors.Red);
+                                this.currentlySeedingLeft[screenCounter] = true;
+                                this.blinkTriggerAreaToggle(false);
+                            }
+                        }
+                        else
+                        {
+                            this.currentlySeedingLeft[screenCounter] = false;
                         }
 
                         // wenn beide Hände erkannt wurden, zusätzlich Mittelpunkt zwischen den Händen anzeigen
+
                         /*if (leftHandPoint != null && rightHandPoint != null)
                         {
                             System.Windows.Point handCenterPoint = new System.Windows.Point((rightHandPoint.X + leftHandPoint.X) / 2,
@@ -1360,10 +1445,12 @@ namespace StarFlowers
 
                             this.handCenterThicknesses[screenCounter] = distance / 8;
                             this.handCenterPoints[screenCounter].Add(pointTo3DPoint(this.stretchDepthPointToScreen(handCenterPoint), offset));
+
                         }*/
                     }
 
                     // Head tracking, wenn Skeleton verfügbar
+
                     Joint halsJoint = skeleton.Joints[JointType.ShoulderCenter];
                     Joint kopfJoint = skeleton.Joints[JointType.Head];
                     if (
@@ -1383,6 +1470,7 @@ namespace StarFlowers
 
                         distanzKopfZuHals = euklDistanz(kopfX, kopfY, halsX, halsY);
                         
+                        showHead = true;
                     }
                 }
                 
@@ -1391,9 +1479,11 @@ namespace StarFlowers
 
                 // ------- Overlay zeichnen ------------
 
+
                 Dispatcher.Invoke(DispatcherPriority.Send, new Action(() => DrawOverlay(colorBitmaps[screenCounter], greenScreenPixelData)));
 
                 int centerPointPixel = ((int)playerCenterPoint.X + ((int)playerCenterPoint.Y * depthWidth));
+
 
                 if (playerCenterPoint != null)
                 {
@@ -1402,7 +1492,29 @@ namespace StarFlowers
                         this.playerCenterPoints[screenCounter].Add(this.pointTo3DPoint(this.stretchDepthPointToScreen(playerCenterPoint), offset));
                     }
                 }
-            } // end for screencounter-loop   
+
+
+            } // end for screencounter-loop
+
+            if(this.activePlants.Count > 0){ //if there are actually any plants which could wither
+                bool wither = true; //assume that withering should happen.
+                foreach (bool growing in this.growingPlants)
+                {
+                    if (growing)
+                    {
+                        //if someone is actually growing any plants, meaning in front of the screen, then do not wither any plants
+                        wither = false;
+                    }
+                }
+
+                if (wither)
+                {
+                    //if withering should occur, then do it.
+                    this.witherAllPlants();
+                    this.showHead = false;
+                    this.blinkTriggerAreaToggle(false);
+                }
+            }
         }
 
     }
