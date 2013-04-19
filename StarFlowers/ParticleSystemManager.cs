@@ -35,11 +35,11 @@ namespace Particles
         /// <summary>
         /// creates a new particle system at the desired startig position. 
         /// </summary>
-        /// <param name="position"></param>
-        /// <param name="speed"></param>
-        /// <param name="color"></param>
-        /// <param name="size"></param>
-        /// <param name="life"></param>
+        /// <param name="position">the position of the particle system. is hold as a object reference, so it can be manipulated from outside to change the PS' position</param>
+        /// <param name="speed">average speed of the particle in this system.</param>
+        /// <param name="color">the color of the particle system</param>
+        /// <param name="size">between 0. and 1.</param>
+        /// <param name="life">bigger than 1</param>
         public void SpawnParticle(Point3D position, double speed, System.Windows.Media.Color color, double size, double life)
         {
             try

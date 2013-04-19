@@ -299,8 +299,6 @@ namespace StarFlowers
             this.TriggerArea.Opacity = 0.0;
             this.TriggerArea.Width = this.Width;
             this.TriggerArea.Margin = new Thickness(0, this.Height - this.TriggerArea.Height, 0, 0);
-
-           
         }
 
         /// <summary>
