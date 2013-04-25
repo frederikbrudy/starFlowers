@@ -14,5 +14,6 @@ As in real life: Gardening ist hard work, as you can see in the following pictur
 
 Our app works well with two separate Kinects and manages to display at a high framerate, which we fixed at 33FPS. To prevent burning in on the screens, there is not static content, thus making the app suitable for long-time-display.
 
+If you want to get started or read more about how the application works and get a quick start on how to build your own read our <a href="StarFlowersDeliverable.pdf">full application description (PDF)</a>. There you will also learn how we manage to use to the skeletons of two different Kinect sensors on a single computer, how the WPF Particle Effect works and how a Sprite animation is made in WPF / C#.
 
 The used particle system is derived from the on Microsoft presents in its <a href="http://msdn.microsoft.com/en-us/library/vstudio/ms771772(v=vs.90).aspx">Particle Effect for WPF Application Samples</a>.
