@@ -3,7 +3,7 @@ starFlowers
 Star Flowers is an interactive art simulation by Frederik Brudy and Janko Hofmann: A passing stranger can interact with an initially blank screen. He can seed plants and watch them grow. As long as he is present, his plants will flourish, but as soon as he leaves they will wither and the simulation starts over again. 
 
 
-A video, demonstrating the application can be found on <a href="https://vimeo.com/64384008" target="_blank">Vimeo</a>. 
+A video, demonstrating the application can be found on our<a href="https://vimeo.com/64384008" target="_blank">video demonstrating the StarFlowers application</a>. 
 
 
 More information about the Making-Of this app can be found on the <a href="http://programmingwithkinect.wordpress.com" target="_blank">programming with Kinect blog</a>.
